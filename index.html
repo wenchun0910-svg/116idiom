@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>成語填填看 - 國文課堂趣味填字大挑戰</title>
+    <!-- Inline SVG Favicon 避免 favicon.ico 404 錯誤 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23f59e0b%22/><text x=%2250%22 y=%2272%22 font-size=%2264%22 font-weight=%22900%22 text-anchor=%22middle%22 fill=%22%23070a12%22 font-family=%22serif%22>成</text></svg>">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -864,6 +866,44 @@
         </div>
     </div>
 
+    <!-- ==================== 修改單筆成語視窗 ==================== -->
+    <div id="edit-idiom-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="w-full max-w-md rounded-3xl bg-navy-900 border border-sky-500/50 p-6 sm:p-7 shadow-2xl">
+            <h3 class="text-xl font-black text-sky-400 mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-pen-to-square"></i> 修改成語資料
+            </h3>
+            <p class="text-xs text-slate-400 mb-5">編輯課次、四字成語或成語釋義後點擊儲存。</p>
+
+            <input type="hidden" id="edit-idiom-id">
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1.5">所屬課次</label>
+                    <input type="text" id="edit-idiom-lesson" placeholder="例如：第一課 雅量"
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-navy-950 border border-slate-700 focus:border-sky-400 text-white text-sm font-bold outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1.5">四字成語</label>
+                    <input type="text" id="edit-idiom-word" placeholder="請輸入四字成語" maxlength="8"
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-navy-950 border border-slate-700 focus:border-sky-400 text-white text-sm font-bold outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1.5">成語解釋</label>
+                    <textarea id="edit-idiom-meaning" rows="3" placeholder="請輸入成語解釋..."
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-navy-950 border border-slate-700 focus:border-sky-400 text-white text-sm outline-none resize-none"></textarea>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3">
+                <button onclick="window.closeEditIdiomModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold">
+                    取消
+                </button>
+                <button onclick="window.saveEditedIdiom()" class="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-navy-950 text-sm font-black shadow-lg shadow-sky-500/20">
+                    儲存修改
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ==================== 自訂確認對話框 (取代 window.confirm) ==================== -->
     <div id="custom-confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
         <div class="w-full max-w-sm rounded-3xl bg-navy-900 border border-slate-700 p-6 text-center shadow-2xl">
@@ -1118,7 +1158,7 @@
                     updateAllUI();
                     return;
                 }
-                const firebaseConfig = {
+              const firebaseConfig = {
   apiKey: "AIzaSyAiai_EXmE8kM4iyJxqf5azORkmzbB0xLY",
   authDomain: "idiom-4f7c0.firebaseapp.com",
   projectId: "idiom-4f7c0",
@@ -1231,6 +1271,144 @@
                 console.error("監聽成績失敗:", error);
             });
         }
+
+        // ---------------------------------------------------------
+        // 6. 輔助查詢與全域 UI 同步更新函式 (解決 ReferenceError: updateAllUI is not defined)
+        // ---------------------------------------------------------
+        function getUniqueLessons() {
+            const set = new Set();
+            idiomsList.forEach(item => {
+                if (item && item.lesson && item.lesson.trim()) {
+                    set.add(item.lesson.trim());
+                }
+            });
+            if (set.size === 0) {
+                set.add("第一課 雅量");
+            }
+            return Array.from(set);
+        }
+
+        function getIdiomsByLesson(lessonName) {
+            if (!lessonName || lessonName === 'ALL') {
+                return idiomsList.filter(i => i && i.idiom && i.idiom.trim().length >= 4);
+            }
+            return idiomsList.filter(i => i && i.lesson === lessonName && i.idiom && i.idiom.trim().length >= 4);
+        }
+
+        window.onPlayerSelectLesson = function (selectedLesson) {
+            if (!selectedLesson) return;
+            gameSettings.designatedLesson = selectedLesson;
+            updateAllUI();
+        };
+
+        function updateAllUI() {
+            const lessons = getUniqueLessons();
+
+            // 確保目前指定的課次存在於可用課次清單中
+            if (!lessons.includes(gameSettings.designatedLesson)) {
+                gameSettings.designatedLesson = lessons[0] || "第一課 雅量";
+            }
+
+            const currentLesson = gameSettings.designatedLesson;
+            const currentPool = getIdiomsByLesson(currentLesson);
+
+            // 1. 更新頂部導覽列與啟動畫面指定課次與題數
+            const navLessonEl = document.getElementById('nav-designated-lesson');
+            if (navLessonEl) navLessonEl.textContent = currentLesson;
+
+            const startLessonEl = document.getElementById('start-designated-lesson');
+            if (startLessonEl) startLessonEl.textContent = currentLesson;
+
+            const startCountEl = document.getElementById('start-idiom-count');
+            if (startCountEl) startCountEl.textContent = `${currentPool.length} 題`;
+
+            // 2. 更新啟動畫面鎖定課次或自由選擇課次狀態
+            const lockStatusLabel = document.getElementById('label-lock-status');
+            const lockedBox = document.getElementById('locked-lesson-box');
+            const unlockedSelect = document.getElementById('unlocked-lesson-select');
+
+            if (lockedBox && unlockedSelect && lockStatusLabel) {
+                if (gameSettings.lockLesson) {
+                    lockStatusLabel.textContent = "(管理者已指定)";
+                    lockedBox.classList.remove('hidden');
+                    lockedBox.classList.add('flex');
+                    unlockedSelect.classList.add('hidden');
+                } else {
+                    lockStatusLabel.textContent = "(可自由選擇課次)";
+                    lockedBox.classList.add('hidden');
+                    lockedBox.classList.remove('flex');
+                    unlockedSelect.classList.remove('hidden');
+                    unlockedSelect.innerHTML = lessons.map(l =>
+                        `<option value="${escapeHtml(l)}" ${l === currentLesson ? 'selected' : ''}>${escapeHtml(l)} (${getIdiomsByLesson(l).length} 題)</option>`
+                    ).join('');
+                }
+            }
+
+            // 3. 更新啟動畫面規則提示文字
+            const ruleTimeEl = document.getElementById('rule-time-limit');
+            if (ruleTimeEl) ruleTimeEl.textContent = `${gameSettings.timeLimit} 秒`;
+
+            const ruleLivesEl = document.getElementById('rule-max-lives');
+            if (ruleLivesEl) ruleLivesEl.textContent = `${gameSettings.maxLives} 顆愛心生命值`;
+
+            // 4. 更新管理後台「指定挑戰課次 & 規則設定」表單控制項
+            const settingLessonSelect = document.getElementById('setting-designated-lesson');
+            if (settingLessonSelect) {
+                settingLessonSelect.innerHTML = lessons.map(l =>
+                    `<option value="${escapeHtml(l)}" ${l === currentLesson ? 'selected' : ''}>${escapeHtml(l)} (${getIdiomsByLesson(l).length} 題)</option>`
+                ).join('');
+            }
+            const settingLockCheckbox = document.getElementById('setting-lock-lesson');
+            if (settingLockCheckbox) settingLockCheckbox.checked = !!gameSettings.lockLesson;
+
+            const settingQCount = document.getElementById('setting-questions-count');
+            if (settingQCount) settingQCount.value = gameSettings.questionsPerRound;
+
+            const settingTimeLimit = document.getElementById('setting-time-limit');
+            if (settingTimeLimit) settingTimeLimit.value = gameSettings.timeLimit;
+
+            const settingMaxLives = document.getElementById('setting-max-lives');
+            if (settingMaxLives) settingMaxLives.value = gameSettings.maxLives;
+
+            // 5. 更新所有課次篩選下拉選單 (包含英雄榜、後台題庫篩選、後台成績篩選)
+            const filterDropdownIds = [
+                'leaderboard-filter-lesson',
+                'admin-idiom-lesson-filter',
+                'admin-score-lesson-filter'
+            ];
+
+            filterDropdownIds.forEach(id => {
+                const selectEl = document.getElementById(id);
+                if (!selectEl) return;
+                const prevVal = selectEl.value || 'ALL';
+                const optionsHtml = [
+                    `<option value="ALL">全部課次</option>`,
+                    ...lessons.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`)
+                ].join('');
+                selectEl.innerHTML = optionsHtml;
+                if (prevVal === 'ALL' || lessons.includes(prevVal)) {
+                    selectEl.value = prevVal;
+                } else {
+                    selectEl.value = 'ALL';
+                }
+            });
+
+            // 6. 重新渲染英雄榜、管理後台成語列表與成績列表
+            if (typeof window.renderPublicLeaderboard === 'function') {
+                window.renderPublicLeaderboard();
+            }
+            if (typeof window.renderAdminIdiomTable === 'function') {
+                window.renderAdminIdiomTable();
+            }
+            if (typeof window.renderAdminScoresTable === 'function') {
+                window.renderAdminScoresTable();
+            }
+        }
+
+        // 將輔助函式與 updateAllUI 綁定至 window 全域物件
+        window.updateAllUI = updateAllUI;
+        window.getUniqueLessons = getUniqueLessons;
+        window.getIdiomsByLesson = getIdiomsByLesson;
 
         // ---------------------------------------------------------
         // 7. 畫面切換控制與管理後台密碼驗證
