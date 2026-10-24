@@ -44,13 +44,13 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4 overflow-hidden" x-data="gameApp" x-init="initApp()">
+<body class="min-h-screen flex items-center justify-center p-4 overflow-hidden" x-data="gameApp">
 
     <!-- 遊戲主要容器 -->
     <div class="relative w-full max-w-md bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-700 overflow-hidden h-[85vh] flex flex-col">
         
         <!-- 全域通知 / 回饋彈窗 (絕對定位覆蓋) -->
-        <div x-show="toast.show" 
+        <div x-show="toast.show" style="display: none;"
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0 translate-y-4"
              x-transition:enter-end="opacity-100 translate-y-0"
@@ -100,7 +100,7 @@
                     開始挑戰
                 </button>
                 
-                <p x-show="idioms.length === 0" class="text-red-400 text-sm text-center font-bold">目前題庫沒有成語，請先進入管理員後台新增！</p>
+                <p x-show="idioms.length === 0" style="display:none;" class="text-red-400 text-sm text-center font-bold">目前題庫沒有成語，請先進入管理員後台新增！</p>
             </div>
 
             <div class="flex space-x-4 w-full pt-4 border-t border-gray-700">
@@ -291,16 +291,16 @@
                 </ul>
             </div>
             
-            <div x-show="idioms.length === 0" class="mt-2 text-center">
+            <div x-show="idioms.length === 0" class="mt-2 text-center" style="display: none;">
                 <button @click="seedDefaultIdioms()" class="text-xs text-gray-500 hover:text-gray-300 underline">載入預設題庫 (測試用)</button>
             </div>
         </div>
 
     </div>
 
-    <!-- Firebase 與 主程式邏輯 -->
+    <!-- 腳本邏輯與 Firebase -->
     <script type="module">
-        // 1. 載入 Alpine.js (改為 Module 方式載入，確保與 Firebase 腳本同步執行)
+        // 1. 載入 Alpine.js
         import Alpine from 'https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/module.esm.js';
 
         // 2. 載入 Firebase 模組
@@ -361,72 +361,71 @@
             }
         }
 
-        // ==================== 應用程式資料與邏輯 (Alpine.js) ====================
-        // 定義 Alpine 組件
+        // ==================== 註冊 Alpine.js 元件 ====================
         Alpine.data('gameApp', () => ({
             // 系統狀態
-            view: 'loading', // loading, home, playing, result, leaderboard, admin
+            view: 'loading',
             db: null,
-                auth: null,
-                appId: typeof __app_id !== 'undefined' ? __app_id : 'idiom-game-default',
-                userId: null,
+            auth: null,
+            appId: typeof __app_id !== 'undefined' ? __app_id : 'idiom-game-default',
+            userId: null,
+            
+            // 資料
+            idioms: [], 
+            leaderboard: [],
+            
+            // 玩家設定
+            playerName: '',
+            selectedLesson: 'all',
+            
+            // 遊戲狀態
+            game: {
+                score: 0,
+                health: 3,
+                maxHealth: 3,
+                correctCount: 0,
+                wrongCount: 0,
+                timer: 100, 
+                maxTimer: 100,
+                timerInterval: null,
                 
-                // 資料
-                idioms: [], // { id, text, lesson }
-                leaderboard: [],
+                currentIdiom: null,
+                hiddenIndex: 0,
+                displayChars: [],
+                options: [],
                 
-                // 玩家設定
-                playerName: '',
-                selectedLesson: 'all',
-                
-                // 遊戲狀態
-                game: {
-                    score: 0,
-                    health: 3,
-                    maxHealth: 3,
-                    correctCount: 0,
-                    wrongCount: 0,
-                    timer: 100, // 用 100 代表 100% 方便血條計算, 實際時間每秒扣 10
-                    maxTimer: 100,
-                    timerInterval: null,
-                    
-                    currentIdiom: null,
-                    hiddenIndex: 0,
-                    displayChars: [],
-                    options: [],
-                    
-                    isProcessing: false,
-                    isShaking: false
-                },
-                
-                // 彈窗狀態
-                toast: {
-                    show: false,
-                    type: 'correct', // correct, error
-                    title: '',
-                    message: ''
-                },
-                
-                // 管理員狀態
-                admin: {
-                    formText: '',
-                    formLesson: '',
-                    editingId: null,
-                    selectedIds: [],
-                    filterLesson: 'all'
-                },
+                isProcessing: false,
+                isShaking: false
+            },
+            
+            // 彈窗狀態
+            toast: {
+                show: false,
+                type: 'correct',
+                title: '',
+                message: ''
+            },
+            
+            // 管理員狀態
+            admin: {
+                formText: '',
+                formLesson: '',
+                editingId: null,
+                selectedIds: [],
+                filterLesson: 'all'
+            },
 
-                // 初始化 Firebase 與載入資料
-                async initApp() {
-                    try {
-                        // ========================================================
-                        // 🌟 這裡就是資料庫連線 (Firebase Config & Init) 的地方 🌟
-                        // ========================================================
-                   
-                        // 若您要將此網頁匯出並部署到自己的主機，請取消下方註解，
-                        // 並填入您自己 Firebase 專案的 API Key 等連線資訊：
-                       
-                      const firebaseConfig = {
+            // 初始化
+            async init() {
+                try {
+                    // 🌟 ======================================================== 🌟
+                    // 🌟                在此設定您的 Firebase Config               🌟
+                    // 🌟 ======================================================== 🌟
+                    // 為避免變數衝突，這裡使用 myFirebaseConfig 命名。
+                    let myFirebaseConfig = {};
+                    
+                 
+               const firebaseConfig = {
   apiKey: "AIzaSyAiai_EXmE8kM4iyJxqf5azORkmzbB0xLY",
   authDomain: "idiom-4f7c0.firebaseapp.com",
   projectId: "idiom-4f7c0",
@@ -434,75 +433,84 @@
   messagingSenderId: "1078951444674",
   appId: "1:1078951444674:web:e6fe94ac4dbba15ed37b5b"
 };
-                        
-                        
-                        // 目前環境中，金鑰是透過系統底層變數 __firebase_config 自動帶入的
-                        if (typeof __firebase_config !== 'undefined') {
-                            firebaseConfig = JSON.parse(__firebase_config);
-                        } else {
-                            console.warn("未偵測到環境變數，啟用本地防呆預設檔。");
-                            firebaseConfig = { apiKey: "local-dev", projectId: "local-dev" };
-                        }
-                        
-                        // 1. 初始化連線
-                        const app = initializeApp(firebaseConfig);
-                        // 2. 獲取資料庫實體 (後續新增/刪除成語都是呼叫這個 this.db)
-                        this.db = getFirestore(app);
-                        // 3. 獲取驗證實體
-                        this.auth = getAuth(app);
-                        // ========================================================
-                        
-                        // 登入
-                        const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                        if (initialToken) {
-                            await signInWithCustomToken(this.auth, initialToken);
-                        } else {
-                            await signInAnonymously(this.auth);
-                        }
-                        
-                        this.userId = this.auth.currentUser.uid;
-                        
-                        // 載入資料
-                        await this.fetchIdioms();
-                        await this.fetchLeaderboard();
-                        
-                        // 嘗試從本地暫存載入玩家名稱
-                        const savedName = localStorage.getItem('idiom_player_name');
-                        if(savedName) this.playerName = savedName;
-
-                        this.view = 'home';
-                        
-                    } catch (error) {
-                        console.error("Firebase Initialization Error:", error);
-                        this.showToast('error', '系統錯誤', '無法連線至資料庫，請稍後再試。');
+                   
+                    
+                    // 自動判斷系統環境變數 (防呆機制)
+                    if (typeof __firebase_config !== 'undefined') {
+                        myFirebaseConfig = typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
+                    } else if (Object.keys(myFirebaseConfig).length === 0) {
+                        console.warn("未偵測到 Firebase 環境變數，啟用本地防呆設定。");
+                        myFirebaseConfig = { apiKey: "local-dev", projectId: "local-dev" };
                     }
-                },
+                    
+                    // 1. 初始化 Firebase App
+                    const app = initializeApp(myFirebaseConfig);
+                    // 2. 獲取 Firestore 資料庫實體
+                    this.db = getFirestore(app);
+                    // 3. 獲取 Auth 實體
+                    this.auth = getAuth(app);
+                    // 🌟 ======================================================== 🌟
 
-                // ==================== 讀寫資料庫 ====================
-                async fetchIdioms() {
-                    if (!this.userId) return;
+                    // 登入
+                    const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                    if (initialToken) {
+                        await signInWithCustomToken(this.auth, initialToken);
+                    } else {
+                        await signInAnonymously(this.auth);
+                    }
+                    
+                    this.userId = this.auth.currentUser.uid;
+                    
+                    // 載入資料
+                    await this.fetchIdioms();
+                    await this.fetchLeaderboard();
+                    
+                    // 從本地暫存載入名稱
+                    const savedName = localStorage.getItem('idiom_player_name');
+                    if(savedName) this.playerName = savedName;
+
+                    this.view = 'home';
+                    
+                } catch (error) {
+                    console.error("初始化錯誤:", error);
+                    this.showToast('error', '系統錯誤', '無法連線至資料庫，請檢查設定檔。');
+                    this.view = 'home'; // 為了能顯示畫面，仍切換回首頁
+                }
+            },
+
+            // ==================== 資料庫操作 ====================
+            async fetchIdioms() {
+                if (!this.userId || !this.db) return;
+                try {
                     const idiomRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms');
                     const snapshot = await getDocs(idiomRef);
                     this.idioms = [];
                     snapshot.forEach(doc => {
                         this.idioms.push({ id: doc.id, ...doc.data() });
                     });
-                },
+                } catch (e) {
+                    console.error("讀取題庫失敗", e);
+                }
+            },
 
-                async fetchLeaderboard() {
-                    if (!this.userId) return;
+            async fetchLeaderboard() {
+                if (!this.userId || !this.db) return;
+                try {
                     const scoreRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'scores');
                     const snapshot = await getDocs(scoreRef);
                     let scores = [];
                     snapshot.forEach(doc => {
                         scores.push({ id: doc.id, ...doc.data() });
                     });
-                    // 在記憶體中排序取前 50 名 (遵守不使用 orderBy 複雜查詢的規則)
                     this.leaderboard = scores.sort((a, b) => b.score - a.score).slice(0, 50);
-                },
+                } catch (e) {
+                    console.error("讀取排行榜失敗", e);
+                }
+            },
 
-                async saveScore() {
-                    if (!this.userId) return;
+            async saveScore() {
+                if (!this.userId || !this.db) return;
+                try {
                     const scoreRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'scores');
                     await addDoc(scoreRef, {
                         name: this.playerName,
@@ -512,275 +520,258 @@
                         timestamp: Date.now()
                     });
                     await this.fetchLeaderboard();
-                },
+                } catch (e) {
+                    console.error("儲存分數失敗", e);
+                }
+            },
 
-                // ==================== 遊戲邏輯 ====================
-                startGame() {
-                    PlaySound('click');
-                    if(!this.playerName.trim()) return;
-                    localStorage.setItem('idiom_player_name', this.playerName.trim());
-                    
-                    // 初始化狀態
-                    this.game.score = 0;
-                    this.game.health = this.game.maxHealth;
-                    this.game.correctCount = 0;
-                    this.game.wrongCount = 0;
-                    this.view = 'playing';
-                    
-                    this.nextQuestion();
-                },
+            // ==================== 遊戲邏輯 ====================
+            startGame() {
+                PlaySound('click');
+                if(!this.playerName.trim()) return;
+                localStorage.setItem('idiom_player_name', this.playerName.trim());
+                
+                this.game.score = 0;
+                this.game.health = this.game.maxHealth;
+                this.game.correctCount = 0;
+                this.game.wrongCount = 0;
+                this.view = 'playing';
+                
+                this.nextQuestion();
+            },
 
-                nextQuestion() {
-                    this.game.isProcessing = false;
-                    this.game.isShaking = false;
-                    
-                    // 過濾指定課文
-                    let pool = this.idioms;
-                    if (this.selectedLesson !== 'all') {
-                        pool = this.idioms.filter(i => i.lesson === this.selectedLesson);
-                        if (pool.length === 0) pool = this.idioms; // 若該課無題目則退回全部
+            nextQuestion() {
+                this.game.isProcessing = false;
+                this.game.isShaking = false;
+                
+                let pool = this.idioms;
+                if (this.selectedLesson !== 'all') {
+                    pool = this.idioms.filter(i => i.lesson === this.selectedLesson);
+                    if (pool.length === 0) pool = this.idioms; 
+                }
+                
+                if (pool.length === 0) {
+                    this.endGame();
+                    return;
+                }
+
+                const randIndex = Math.floor(Math.random() * pool.length);
+                this.game.currentIdiom = pool[randIndex];
+                const idiomText = this.game.currentIdiom.text;
+                
+                this.game.hiddenIndex = Math.floor(Math.random() * 4);
+                const correctChar = idiomText[this.game.hiddenIndex];
+                
+                this.game.displayChars = idiomText.split('');
+                this.game.displayChars[this.game.hiddenIndex] = '?';
+                
+                this.game.options = this.generateDistractors(correctChar);
+                
+                this.game.timer = this.game.maxTimer;
+                this.startTimer();
+            },
+
+            generateDistractors(correctChar) {
+                let chars = new Set([correctChar]);
+                const allChars = this.idioms.map(i => i.text).join('');
+                const commonChars = "天地玄黃宇宙洪荒日月盈昃辰宿列張寒來暑往秋收冬藏金生麗水玉出崑岡劍號巨闕珠稱夜光果珍李柰菜重芥薑海鹹河淡鱗潛羽翔";
+                const fallbackChars = allChars + commonChars;
+                
+                while (chars.size < 4) {
+                    const randChar = fallbackChars[Math.floor(Math.random() * fallbackChars.length)];
+                    if (randChar.trim() && randChar !== correctChar) {
+                        chars.add(randChar);
                     }
+                }
+                return Array.from(chars).sort(() => Math.random() - 0.5);
+            },
+
+            startTimer() {
+                clearInterval(this.game.timerInterval);
+                const tickRate = 100;
+                const totalTime = 10000; 
+                const decrement = (100 / (totalTime / tickRate));
+                
+                this.game.timerInterval = setInterval(() => {
+                    if (this.view !== 'playing' || this.game.isProcessing) return;
                     
-                    if (pool.length === 0) {
+                    this.game.timer -= decrement;
+                    
+                    if (this.game.timer <= 0) {
+                        this.game.timer = 0;
+                        this.handleWrong("時間到！");
+                    }
+                }, tickRate);
+            },
+
+            submitAnswer(option) {
+                if (this.game.isProcessing) return;
+                this.game.isProcessing = true;
+                clearInterval(this.game.timerInterval);
+                
+                const correctChar = this.game.currentIdiom.text[this.game.hiddenIndex];
+                
+                if (option === correctChar) {
+                    PlaySound('correct');
+                    this.game.score += 10 + Math.floor(this.game.timer / 10);
+                    this.game.correctCount++;
+                    
+                    this.game.displayChars[this.game.hiddenIndex] = correctChar;
+                    this.showToast('correct', '答對了！', '太棒了，繼續保持！');
+                    
+                    setTimeout(() => this.nextQuestion(), 1000);
+                } else {
+                    this.handleWrong("答錯了！");
+                }
+            },
+
+            handleWrong(title) {
+                PlaySound('wrong');
+                this.game.isShaking = true;
+                this.game.isProcessing = true;
+                clearInterval(this.game.timerInterval);
+                
+                this.game.health--;
+                this.game.wrongCount++;
+                
+                const correctChar = this.game.currentIdiom.text[this.game.hiddenIndex];
+                this.game.displayChars[this.game.hiddenIndex] = correctChar; 
+                
+                this.showToast('error', title, `正確答案是：「${this.game.currentIdiom.text}」`);
+                
+                setTimeout(() => {
+                    if (this.game.health <= 0) {
                         this.endGame();
-                        return;
-                    }
-
-                    // 隨機抽一題
-                    const randIndex = Math.floor(Math.random() * pool.length);
-                    this.game.currentIdiom = pool[randIndex];
-                    const idiomText = this.game.currentIdiom.text;
-                    
-                    // 決定挖空哪個字 (0-3)
-                    this.game.hiddenIndex = Math.floor(Math.random() * 4);
-                    const correctChar = idiomText[this.game.hiddenIndex];
-                    
-                    // 顯示字元陣列 (挖空的位置為 '?')
-                    this.game.displayChars = idiomText.split('');
-                    this.game.displayChars[this.game.hiddenIndex] = '?';
-                    
-                    // 產生干擾選項
-                    this.game.options = this.generateDistractors(correctChar);
-                    
-                    // 重置並啟動計時器
-                    this.game.timer = this.game.maxTimer;
-                    this.startTimer();
-                },
-
-                generateDistractors(correctChar) {
-                    let chars = new Set([correctChar]);
-                    // 從現有題庫中隨機抓取字
-                    const allChars = this.idioms.map(i => i.text).join('');
-                    const commonChars = "天地玄黃宇宙洪荒日月盈昃辰宿列張寒來暑往秋收冬藏金生麗水玉出崑岡劍號巨闕珠稱夜光果珍李柰菜重芥薑海鹹河淡鱗潛羽翔";
-                    const fallbackChars = allChars + commonChars;
-                    
-                    while (chars.size < 4) {
-                        const randChar = fallbackChars[Math.floor(Math.random() * fallbackChars.length)];
-                        if (randChar.trim() && randChar !== correctChar) {
-                            chars.add(randChar);
-                        }
-                    }
-                    // 洗牌選項
-                    return Array.from(chars).sort(() => Math.random() - 0.5);
-                },
-
-                startTimer() {
-                    clearInterval(this.game.timerInterval);
-                    const tickRate = 100; // ms
-                    const totalTime = 10000; // 10秒
-                    const decrement = (100 / (totalTime / tickRate)); // 每次減少的百分比
-                    
-                    this.game.timerInterval = setInterval(() => {
-                        if (this.view !== 'playing' || this.game.isProcessing) return;
-                        
-                        this.game.timer -= decrement;
-                        
-                        if (this.game.timer <= 0) {
-                            this.game.timer = 0;
-                            this.handleWrong("時間到！");
-                        }
-                    }, tickRate);
-                },
-
-                submitAnswer(option) {
-                    if (this.game.isProcessing) return;
-                    this.game.isProcessing = true;
-                    clearInterval(this.game.timerInterval);
-                    
-                    const correctChar = this.game.currentIdiom.text[this.game.hiddenIndex];
-                    
-                    if (option === correctChar) {
-                        PlaySound('correct');
-                        this.game.score += 10 + Math.floor(this.game.timer / 10); // 剩餘時間加分
-                        this.game.correctCount++;
-                        
-                        // 動畫更新顯示正確字
-                        this.game.displayChars[this.game.hiddenIndex] = correctChar;
-                        
-                        this.showToast('correct', '答對了！', '太棒了，繼續保持！');
-                        setTimeout(() => this.nextQuestion(), 1000);
                     } else {
-                        this.handleWrong("答錯了！");
+                        this.nextQuestion();
                     }
-                },
+                }, 2000); 
+            },
 
-                handleWrong(title) {
-                    PlaySound('wrong');
-                    this.game.isShaking = true;
-                    this.game.isProcessing = true;
-                    clearInterval(this.game.timerInterval);
-                    
-                    this.game.health--;
-                    this.game.wrongCount++;
-                    
-                    const correctChar = this.game.currentIdiom.text[this.game.hiddenIndex];
-                    this.game.displayChars[this.game.hiddenIndex] = correctChar; // 顯示正確答案
-                    
-                    this.showToast('error', title, `正確答案是：「${this.game.currentIdiom.text}」`);
-                    
-                    setTimeout(() => {
-                        if (this.game.health <= 0) {
-                            this.endGame();
-                        } else {
-                            this.nextQuestion();
-                        }
-                    }, 2000); // 彈窗停留 2 秒
-                },
+            endGame() {
+                PlaySound('gameover');
+                clearInterval(this.game.timerInterval);
+                this.saveScore(); 
+                this.view = 'result';
+            },
 
-                endGame() {
-                    PlaySound('gameover');
-                    clearInterval(this.game.timerInterval);
-                    this.saveScore(); // 非同步寫入，不阻塞畫面
-                    this.view = 'result';
-                },
+            // ==================== 彈窗 ====================
+            showToast(type, title, message) {
+                this.toast = { show: true, type, title, message };
+                setTimeout(() => {
+                    this.toast.show = false;
+                }, type === 'correct' ? 1000 : 2000);
+            },
 
-                // ==================== 彈窗 UI ====================
-                showToast(type, title, message) {
-                    this.toast = { show: true, type, title, message };
-                    setTimeout(() => {
-                        this.toast.show = false;
-                    }, type === 'correct' ? 1000 : 2000);
-                },
+            // ==================== 管理員邏輯 ====================
+            async saveIdiom() {
+                if (!this.userId || !this.db) return;
+                PlaySound('click');
+                const text = this.admin.formText.trim();
+                const lesson = this.admin.formLesson.trim();
+                
+                if (text.length !== 4 || !lesson) return;
 
-                // ==================== 管理員邏輯 ====================
-                async saveIdiom() {
-                    if (!this.userId) return;
-                    PlaySound('click');
-                    const text = this.admin.formText.trim();
-                    const lesson = this.admin.formLesson.trim();
-                    
-                    if (text.length !== 4 || !lesson) return;
-
-                    const idiomRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms');
-                    
-                    try {
-                        if (this.admin.editingId) {
-                            // 更新
-                            const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms', this.admin.editingId);
-                            await updateDoc(docRef, { text, lesson });
-                        } else {
-                            // 新增
-                            await addDoc(idiomRef, { text, lesson, createdAt: Date.now() });
-                        }
-                        
-                        this.admin.formText = '';
-                        this.admin.formLesson = '';
-                        this.admin.editingId = null;
-                        await this.fetchIdioms();
-                    } catch (e) {
-                        console.error("Save Idiom Error:", e);
+                const idiomRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms');
+                
+                try {
+                    if (this.admin.editingId) {
+                        const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms', this.admin.editingId);
+                        await updateDoc(docRef, { text, lesson });
+                    } else {
+                        await addDoc(idiomRef, { text, lesson, createdAt: Date.now() });
                     }
-                },
-
-                editIdiom(item) {
-                    PlaySound('click');
-                    this.admin.formText = item.text;
-                    this.admin.formLesson = item.lesson;
-                    this.admin.editingId = item.id;
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                },
-
-                cancelEdit() {
-                    PlaySound('click');
+                    
                     this.admin.formText = '';
                     this.admin.formLesson = '';
                     this.admin.editingId = null;
-                },
-
-                async deleteIdiom(id) {
-                    if (!this.userId) return;
-                    PlaySound('click');
-                    try {
-                        await deleteDoc(doc(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms', id));
-                        await this.fetchIdioms();
-                        this.admin.selectedIds = this.admin.selectedIds.filter(selId => selId !== id);
-                    } catch (e) {
-                        console.error("Delete Error:", e);
-                    }
-                },
-
-                async batchDelete() {
-                    if (!this.userId || this.admin.selectedIds.length === 0) return;
-                    PlaySound('click');
-                    // 為了避免 alert，直接進行刪除 (後台可考慮做假 alert，此處直接執行)
-                    try {
-                        // 依序刪除 (遵守規則不使用複雜 batch 寫法，簡單迴圈)
-                        for (const id of this.admin.selectedIds) {
-                            await deleteDoc(doc(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms', id));
-                        }
-                        this.admin.selectedIds = [];
-                        await this.fetchIdioms();
-                    } catch (e) {
-                        console.error("Batch Delete Error:", e);
-                    }
-                },
-
-                // 開發測試用：塞入預設資料
-                async seedDefaultIdioms() {
-                    const defaults = [
-                        { text: '一石二鳥', lesson: '第1課' },
-                        { text: '半途而廢', lesson: '第1課' },
-                        { text: '守株待兔', lesson: '第2課' },
-                        { text: '畫蛇添足', lesson: '第2課' },
-                        { text: '杯弓蛇影', lesson: '第3課' },
-                        { text: '掩耳盜鈴', lesson: '第3課' },
-                        { text: '刻舟求劍', lesson: '第4課' },
-                        { text: '拔苗助長', lesson: '第4課' }
-                    ];
-                    
-                    const idiomRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms');
-                    for (const item of defaults) {
-                        await addDoc(idiomRef, { text: item.text, lesson: item.lesson, createdAt: Date.now() });
-                    }
                     await this.fetchIdioms();
-                },
-
-                // ==================== 計算屬性 (Getters) ====================
-                get availableLessons() {
-                    const lessons = new Set(this.idioms.map(i => i.lesson));
-                    return Array.from(lessons).sort();
-                },
-
-                get filteredIdioms() {
-                    if (this.admin.filterLesson === 'all') return this.idioms;
-                    return this.idioms.filter(i => i.lesson === this.admin.filterLesson);
-                },
-
-                get timeColorClass() {
-                    if (this.game.timer > 60) return 'bg-gradient-to-r from-blue-400 to-green-400';
-                    if (this.game.timer > 30) return 'bg-gradient-to-r from-yellow-400 to-orange-400';
-                    return 'bg-gradient-to-r from-red-500 to-red-700 animate-pulse';
-                },
-
-                // ==================== 工具函數 ====================
-                formatDate(timestamp) {
-                    if (!timestamp) return '';
-                    const d = new Date(timestamp);
-                    return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                } catch (e) {
+                    console.error("儲存成語失敗:", e);
                 }
-            }));
-            
-        // 啟動 Alpine.js (取代 <script defer>，確保最後才執行)
+            },
+
+            editIdiom(item) {
+                PlaySound('click');
+                this.admin.formText = item.text;
+                this.admin.formLesson = item.lesson;
+                this.admin.editingId = item.id;
+            },
+
+            cancelEdit() {
+                PlaySound('click');
+                this.admin.formText = '';
+                this.admin.formLesson = '';
+                this.admin.editingId = null;
+            },
+
+            async deleteIdiom(id) {
+                if (!this.userId || !this.db) return;
+                PlaySound('click');
+                try {
+                    await deleteDoc(doc(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms', id));
+                    await this.fetchIdioms();
+                    this.admin.selectedIds = this.admin.selectedIds.filter(selId => selId !== id);
+                } catch (e) {
+                    console.error("刪除失敗:", e);
+                }
+            },
+
+            async batchDelete() {
+                if (!this.userId || !this.db || this.admin.selectedIds.length === 0) return;
+                PlaySound('click');
+                try {
+                    for (const id of this.admin.selectedIds) {
+                        await deleteDoc(doc(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms', id));
+                    }
+                    this.admin.selectedIds = [];
+                    await this.fetchIdioms();
+                } catch (e) {
+                    console.error("批次刪除失敗:", e);
+                }
+            },
+
+            async seedDefaultIdioms() {
+                if (!this.db) return;
+                const defaults = [
+                    { text: '一石二鳥', lesson: '第1課' },
+                    { text: '半途而廢', lesson: '第1課' },
+                    { text: '守株待兔', lesson: '第2課' },
+                    { text: '畫蛇添足', lesson: '第2課' }
+                ];
+                
+                const idiomRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms');
+                for (const item of defaults) {
+                    await addDoc(idiomRef, { text: item.text, lesson: item.lesson, createdAt: Date.now() });
+                }
+                await this.fetchIdioms();
+            },
+
+            // ==================== 計算與格式化 ====================
+            get availableLessons() {
+                const lessons = new Set(this.idioms.map(i => i.lesson));
+                return Array.from(lessons).sort();
+            },
+
+            get filteredIdioms() {
+                if (this.admin.filterLesson === 'all') return this.idioms;
+                return this.idioms.filter(i => i.lesson === this.admin.filterLesson);
+            },
+
+            get timeColorClass() {
+                if (this.game.timer > 60) return 'bg-gradient-to-r from-blue-400 to-green-400';
+                if (this.game.timer > 30) return 'bg-gradient-to-r from-yellow-400 to-orange-400';
+                return 'bg-gradient-to-r from-red-500 to-red-700 animate-pulse';
+            },
+
+            formatDate(timestamp) {
+                if (!timestamp) return '';
+                const d = new Date(timestamp);
+                return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+            }
+        }));
+
+        // 3. 確保所有組件註冊完畢後，手動啟動 Alpine
         window.Alpine = Alpine;
         Alpine.start();
     </script>
