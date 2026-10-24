@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>成語填填看</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
         body {
@@ -301,6 +300,10 @@
 
     <!-- Firebase 與 主程式邏輯 -->
     <script type="module">
+        // 1. 載入 Alpine.js (改為 Module 方式載入，確保與 Firebase 腳本同步執行)
+        import Alpine from 'https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/module.esm.js';
+
+        // 2. 載入 Firebase 模組
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -359,11 +362,11 @@
         }
 
         // ==================== 應用程式資料與邏輯 (Alpine.js) ====================
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('gameApp', () => ({
-                // 系統狀態
-                view: 'loading', // loading, home, playing, result, leaderboard, admin
-                db: null,
+        // 定義 Alpine 組件
+        Alpine.data('gameApp', () => ({
+            // 系統狀態
+            view: 'loading', // loading, home, playing, result, leaderboard, admin
+            db: null,
                 auth: null,
                 appId: typeof __app_id !== 'undefined' ? __app_id : 'idiom-game-default',
                 userId: null,
@@ -416,19 +419,39 @@
                 // 初始化 Firebase 與載入資料
                 async initApp() {
                     try {
+                        // ========================================================
+                        // 🌟 這裡就是資料庫連線 (Firebase Config & Init) 的地方 🌟
+                        // ========================================================
                         let firebaseConfig = {};
-                        // 在此環境中，Firebase 金鑰會自動透過環境變數 __firebase_config 注入
+                        
+                        // 若您要將此網頁匯出並部署到自己的主機，請取消下方註解，
+                        // 並填入您自己 Firebase 專案的 API Key 等連線資訊：
+                       
+                      const firebaseConfig = {
+  apiKey: "AIzaSyAiai_EXmE8kM4iyJxqf5azORkmzbB0xLY",
+  authDomain: "idiom-4f7c0.firebaseapp.com",
+  projectId: "idiom-4f7c0",
+  storageBucket: "idiom-4f7c0.firebasestorage.app",
+  messagingSenderId: "1078951444674",
+  appId: "1:1078951444674:web:e6fe94ac4dbba15ed37b5b"
+};
+                        
+                        
+                        // 目前環境中，金鑰是透過系統底層變數 __firebase_config 自動帶入的
                         if (typeof __firebase_config !== 'undefined') {
                             firebaseConfig = JSON.parse(__firebase_config);
                         } else {
-                            console.warn("未偵測到環境變數 __firebase_config。若在本地端執行，請在此處補上您的 Firebase Config。");
-                            // 本地防呆預設，避免直接拋錯
+                            console.warn("未偵測到環境變數，啟用本地防呆預設檔。");
                             firebaseConfig = { apiKey: "local-dev", projectId: "local-dev" };
                         }
                         
+                        // 1. 初始化連線
                         const app = initializeApp(firebaseConfig);
+                        // 2. 獲取資料庫實體 (後續新增/刪除成語都是呼叫這個 this.db)
                         this.db = getFirestore(app);
+                        // 3. 獲取驗證實體
                         this.auth = getAuth(app);
+                        // ========================================================
                         
                         // 登入
                         const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -757,7 +780,10 @@
                     return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
                 }
             }));
-        });
+            
+        // 啟動 Alpine.js (取代 <script defer>，確保最後才執行)
+        window.Alpine = Alpine;
+        Alpine.start();
     </script>
 </body>
 </html>
