@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成語填填看</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #ffffff;
+            touch-action: manipulation; /* 防止雙擊縮放 */
+        }
+        
+        /* 隱藏捲軸但保持可捲動 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* 慶祝動畫特效 */
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* 答錯震動特效 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 overflow-hidden" x-data="gameApp" x-init="initApp()">
+
+    <!-- 遊戲主要容器 -->
+    <div class="relative w-full max-w-md bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-700 overflow-hidden h-[85vh] flex flex-col">
+        
+        <!-- 全域通知 / 回饋彈窗 (絕對定位覆蓋) -->
+        <div x-show="toast.show" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 translate-y-4"
+             class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-3/4 max-w-sm rounded-2xl p-6 text-center shadow-2xl border-2"
+             :class="toast.type === 'correct' ? 'bg-green-600 border-green-400' : 'bg-red-600 border-red-400'">
+            <h2 class="text-3xl font-black mb-2" x-text="toast.title"></h2>
+            <p class="text-lg font-bold" x-text="toast.message"></p>
+        </div>
+
+        <!-- ==================== 1. 載入畫面 ==================== -->
+        <div x-show="view === 'loading'" class="flex-1 flex flex-col items-center justify-center space-y-4">
+            <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-blue-300 font-bold tracking-widest animate-pulse">系統初始化中...</p>
+        </div>
+
+        <!-- ==================== 2. 首頁 (登入與選單) ==================== -->
+        <div x-show="view === 'home'" class="flex-1 flex flex-col items-center justify-center p-6 space-y-8 animate-pop" style="display: none;">
+            <div class="text-center space-y-2">
+                <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 filter drop-shadow-lg">
+                    成語填填看
+                </h1>
+                <p class="text-gray-400 font-bold tracking-wider">挑戰你的國學常識</p>
+            </div>
+
+            <div class="w-full space-y-4">
+                <input type="text" x-model="playerName" placeholder="請輸入您的挑戰者名稱" 
+                       class="w-full bg-gray-800 border-2 border-gray-600 rounded-xl px-4 py-3 text-center text-lg text-white font-bold focus:outline-none focus:border-yellow-400 transition-colors placeholder-gray-500">
+                
+                <div class="relative">
+                    <select x-model="selectedLesson" class="w-full bg-gray-800 border-2 border-gray-600 rounded-xl px-4 py-3 text-center text-lg text-white font-bold focus:outline-none focus:border-yellow-400 appearance-none">
+                        <option value="all">全部課文 (隨機抽題)</option>
+                        <template x-for="lesson in availableLessons" :key="lesson">
+                            <option :value="lesson" x-text="lesson"></option>
+                        </template>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                        ▼
+                    </div>
+                </div>
+
+                <button @click="startGame()" 
+                        class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-black text-xl py-4 rounded-xl shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        :disabled="!playerName.trim() || idioms.length === 0">
+                    開始挑戰
+                </button>
+                
+                <p x-show="idioms.length === 0" class="text-red-400 text-sm text-center font-bold">目前題庫沒有成語，請先進入管理員後台新增！</p>
+            </div>
+
+            <div class="flex space-x-4 w-full pt-4 border-t border-gray-700">
+                <button @click="view = 'leaderboard'" class="flex-1 bg-gray-800 hover:bg-gray-700 py-3 rounded-xl font-bold transition-colors active:scale-95 text-blue-300">
+                    🏆 排行榜
+                </button>
+                <button @click="view = 'admin'" class="flex-1 bg-gray-800 hover:bg-gray-700 py-3 rounded-xl font-bold transition-colors active:scale-95 text-purple-300">
+                    ⚙️ 管理員
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== 3. 遊戲畫面 ==================== -->
+        <div x-show="view === 'playing'" class="flex-1 flex flex-col p-4 w-full h-full" style="display: none;">
+            
+            <!-- 頂部資訊區: 標題與生命值 -->
+            <div class="flex justify-between items-center mb-4">
+                <div class="text-gray-400 font-bold bg-gray-800 px-3 py-1 rounded-full text-sm">
+                    得分: <span class="text-yellow-400 text-lg" x-text="game.score"></span>
+                </div>
+                <div class="flex space-x-1">
+                    <template x-for="i in game.maxHealth">
+                        <svg class="w-6 h-6 transition-all duration-300" :class="i <= game.health ? 'text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-gray-600'" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                        </svg>
+                    </template>
+                </div>
+            </div>
+
+            <!-- 時間血條 -->
+            <div class="w-full bg-gray-800 rounded-full h-3 mb-6 overflow-hidden border border-gray-700 shadow-inner">
+                <div class="h-full rounded-full transition-all duration-100 ease-linear"
+                     :class="timeColorClass"
+                     :style="`width: ${(game.timer / game.maxTimer) * 100}%`"></div>
+            </div>
+
+            <!-- 題目區域 -->
+            <div class="flex-1 flex flex-col justify-center items-center space-y-8" :class="{ 'animate-shake': game.isShaking }">
+                <div class="text-center">
+                    <p class="text-gray-400 font-bold mb-2" x-text="game.currentIdiom?.lesson || ''"></p>
+                    <div class="flex justify-center space-x-3">
+                        <template x-for="(char, index) in game.displayChars" :key="index">
+                            <div class="w-16 h-20 sm:w-20 sm:h-24 bg-gray-800 border-2 border-gray-600 rounded-xl flex items-center justify-center text-4xl sm:text-5xl font-black shadow-lg"
+                                 :class="{'bg-blue-900/50 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]': index === game.hiddenIndex, 'text-yellow-400': index !== game.hiddenIndex, 'text-white': index === game.hiddenIndex}">
+                                <span x-text="char"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 選項按鈕 -->
+                <div class="grid grid-cols-2 gap-4 w-full max-w-xs mt-8">
+                    <template x-for="(option, index) in game.options" :key="index">
+                        <button @click="submitAnswer(option)"
+                                :disabled="game.isProcessing"
+                                class="bg-gradient-to-b from-gray-700 to-gray-800 hover:from-blue-600 hover:to-blue-800 border border-gray-600 rounded-xl py-5 text-3xl font-black shadow-md transform active:scale-95 transition-all disabled:opacity-50 text-white">
+                            <span x-text="option"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 4. 結算畫面 ==================== -->
+        <div x-show="view === 'result'" class="flex-1 flex flex-col items-center justify-center p-6 space-y-6 animate-pop" style="display: none;">
+            <h2 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">遊戲結束</h2>
+            
+            <div class="bg-gray-800 w-full rounded-2xl p-6 shadow-lg border border-gray-700 space-y-4 text-center">
+                <p class="text-gray-400 font-bold text-lg">玩家：<span class="text-white" x-text="playerName"></span></p>
+                <div class="text-6xl font-black text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" x-text="game.score"></div>
+                <p class="text-gray-400 font-bold">總得分</p>
+                
+                <div class="flex justify-center space-x-8 pt-4 border-t border-gray-700">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-400" x-text="game.correctCount"></div>
+                        <div class="text-sm text-gray-400">答對題數</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-red-400" x-text="game.wrongCount"></div>
+                        <div class="text-sm text-gray-400">答錯題數</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full space-y-3">
+                <button @click="view = 'leaderboard'" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg py-4 rounded-xl shadow-lg transform active:scale-95 transition-all">
+                    查看排行榜
+                </button>
+                <button @click="view = 'home'" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold text-lg py-4 rounded-xl shadow-lg transform active:scale-95 transition-all">
+                    回首頁
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== 5. 排行榜畫面 ==================== -->
+        <div x-show="view === 'leaderboard'" class="flex-1 flex flex-col p-6 animate-pop" style="display: none;">
+            <h2 class="text-3xl font-black text-center text-blue-400 mb-6 flex items-center justify-center">
+                <span class="mr-2">🏆</span> 英雄榜
+            </h2>
+            
+            <div class="flex-1 bg-gray-800 rounded-xl border border-gray-700 overflow-y-auto no-scrollbar p-2 space-y-2">
+                <template x-if="leaderboard.length === 0">
+                    <p class="text-center text-gray-500 font-bold py-10">尚無成績紀錄</p>
+                </template>
+                <template x-for="(entry, index) in leaderboard" :key="index">
+                    <div class="flex items-center justify-between p-3 rounded-lg"
+                         :class="index === 0 ? 'bg-yellow-500/20 border border-yellow-500/50' : (index === 1 ? 'bg-gray-300/20 border border-gray-300/50' : (index === 2 ? 'bg-orange-700/20 border border-orange-700/50' : 'bg-gray-700/50'))">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xl font-black w-8 text-center" 
+                                  :class="index === 0 ? 'text-yellow-400' : (index === 1 ? 'text-gray-300' : (index === 2 ? 'text-orange-400' : 'text-gray-500'))" 
+                                  x-text="`#${index + 1}`"></span>
+                            <div>
+                                <p class="font-bold text-white text-lg" x-text="entry.name"></p>
+                                <p class="text-xs text-gray-400" x-text="formatDate(entry.timestamp)"></p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-2xl font-black text-yellow-400" x-text="entry.score"></p>
+                            <p class="text-xs text-gray-400" x-text="`✔️${entry.correct} ❌${entry.wrong}`"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <button @click="view = 'home'" class="w-full mt-4 bg-gray-700 hover:bg-gray-600 text-white font-bold text-lg py-3 rounded-xl shadow-lg transform active:scale-95 transition-all">
+                回首頁
+            </button>
+        </div>
+
+        <!-- ==================== 6. 管理員介面 ==================== -->
+        <div x-show="view === 'admin'" class="flex-1 flex flex-col p-4 animate-pop overflow-hidden" style="display: none;">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-black text-purple-400">⚙️ 題庫管理</h2>
+                <button @click="view = 'home'" class="text-sm bg-gray-700 px-3 py-1 rounded-lg font-bold hover:bg-gray-600 active:scale-95">返回</button>
+            </div>
+
+            <!-- 新增表單 -->
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-4 shadow-md">
+                <h3 class="font-bold text-gray-300 mb-3" x-text="admin.editingId ? '編輯成語' : '新增成語'"></h3>
+                <div class="flex space-x-2 mb-2">
+                    <input type="text" x-model="admin.formText" placeholder="四字成語 (如: 一石二鳥)" maxlength="4" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400">
+                    <input type="text" x-model="admin.formLesson" placeholder="課文 (如: 第1課)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400">
+                </div>
+                <div class="flex space-x-2">
+                    <button @click="saveIdiom()" 
+                            class="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-lg transform active:scale-95 transition-all disabled:opacity-50"
+                            :disabled="admin.formText.length !== 4 || !admin.formLesson.trim()">
+                        <span x-text="admin.editingId ? '儲存修改' : '新增題庫'"></span>
+                    </button>
+                    <button x-show="admin.editingId" @click="cancelEdit()" class="px-4 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 rounded-lg active:scale-95">取消</button>
+                </div>
+            </div>
+
+            <!-- 篩選與操作列 -->
+            <div class="flex justify-between items-center mb-2">
+                <select x-model="admin.filterLesson" class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm focus:outline-none">
+                    <option value="all">全部課文</option>
+                    <template x-for="lesson in availableLessons" :key="lesson">
+                        <option :value="lesson" x-text="lesson"></option>
+                    </template>
+                </select>
+                <button @click="batchDelete()" x-show="admin.selectedIds.length > 0" class="bg-red-600 hover:bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-lg shadow active:scale-95">
+                    刪除所選 (<span x-text="admin.selectedIds.length"></span>)
+                </button>
+            </div>
+
+            <!-- 成語清單 -->
+            <div class="flex-1 bg-gray-800 rounded-xl border border-gray-700 overflow-y-auto no-scrollbar p-2">
+                <template x-if="filteredIdioms.length === 0">
+                    <p class="text-center text-gray-500 py-6 text-sm">此課文目前沒有成語</p>
+                </template>
+                <ul class="space-y-2">
+                    <template x-for="item in filteredIdioms" :key="item.id">
+                        <li class="flex items-center justify-between bg-gray-900 p-3 rounded-lg border border-gray-700">
+                            <div class="flex items-center space-x-3">
+                                <input type="checkbox" :value="item.id" x-model="admin.selectedIds" class="w-4 h-4 text-purple-600 rounded border-gray-600 focus:ring-purple-500 focus:ring-2 bg-gray-700">
+                                <div>
+                                    <span class="font-black text-lg tracking-widest text-white" x-text="item.text"></span>
+                                    <span class="text-xs text-gray-400 ml-2" x-text="item.lesson"></span>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button @click="editIdiom(item)" class="text-blue-400 hover:text-blue-300 text-sm font-bold">編輯</button>
+                                <button @click="deleteIdiom(item.id)" class="text-red-400 hover:text-red-300 text-sm font-bold">刪除</button>
+                            </div>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+            
+            <div x-show="idioms.length === 0" class="mt-2 text-center">
+                <button @click="seedDefaultIdioms()" class="text-xs text-gray-500 hover:text-gray-300 underline">載入預設題庫 (測試用)</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Firebase 與 主程式邏輯 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ==================== 音效引擎 (Web Audio API) ====================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function PlaySound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            const now = audioCtx.currentTime;
+            
+            switch(type) {
+                case 'click':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                    break;
+                case 'correct':
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                    gain.gain.setValueAtTime(0.5, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                    break;
+                case 'wrong':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+                    gain.gain.setValueAtTime(0.5, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                    break;
+                case 'gameover':
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.linearRampToValueAtTime(100, now + 0.8);
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.8);
+                    osc.start(now);
+                    osc.stop(now + 0.8);
+                    break;
+            }
+        }
+
+        // ==================== 應用程式資料與邏輯 (Alpine.js) ====================
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('gameApp', () => ({
+                // 系統狀態
+                view: 'loading', // loading, home, playing, result, leaderboard, admin
+                db: null,
+                auth: null,
+                appId: typeof __app_id !== 'undefined' ? __app_id : 'idiom-game-default',
+                userId: null,
+                
+                // 資料
+                idioms: [], // { id, text, lesson }
+                leaderboard: [],
+                
+                // 玩家設定
+                playerName: '',
+                selectedLesson: 'all',
+                
+                // 遊戲狀態
+                game: {
+                    score: 0,
+                    health: 3,
+                    maxHealth: 3,
+                    correctCount: 0,
+                    wrongCount: 0,
+                    timer: 100, // 用 100 代表 100% 方便血條計算, 實際時間每秒扣 10
+                    maxTimer: 100,
+                    timerInterval: null,
+                    
+                    currentIdiom: null,
+                    hiddenIndex: 0,
+                    displayChars: [],
+                    options: [],
+                    
+                    isProcessing: false,
+                    isShaking: false
+                },
+                
+                // 彈窗狀態
+                toast: {
+                    show: false,
+                    type: 'correct', // correct, error
+                    title: '',
+                    message: ''
+                },
+                
+                // 管理員狀態
+                admin: {
+                    formText: '',
+                    formLesson: '',
+                    editingId: null,
+                    selectedIds: [],
+                    filterLesson: 'all'
+                },
+
+                // 初始化 Firebase 與載入資料
+                async initApp() {
+                    try {
+                        let firebaseConfig = {};
+                        // 在此環境中，Firebase 金鑰會自動透過環境變數 __firebase_config 注入
+                        if (typeof __firebase_config !== 'undefined') {
+                            firebaseConfig = JSON.parse(__firebase_config);
+                        } else {
+                            console.warn("未偵測到環境變數 __firebase_config。若在本地端執行，請在此處補上您的 Firebase Config。");
+                            // 本地防呆預設，避免直接拋錯
+                            firebaseConfig = { apiKey: "local-dev", projectId: "local-dev" };
+                        }
+                        
+                        const app = initializeApp(firebaseConfig);
+                        this.db = getFirestore(app);
+                        this.auth = getAuth(app);
+                        
+                        // 登入
+                        const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                        if (initialToken) {
+                            await signInWithCustomToken(this.auth, initialToken);
+                        } else {
+                            await signInAnonymously(this.auth);
+                        }
+                        
+                        this.userId = this.auth.currentUser.uid;
+                        
+                        // 載入資料
+                        await this.fetchIdioms();
+                        await this.fetchLeaderboard();
+                        
+                        // 嘗試從本地暫存載入玩家名稱
+                        const savedName = localStorage.getItem('idiom_player_name');
+                        if(savedName) this.playerName = savedName;
+
+                        this.view = 'home';
+                        
+                    } catch (error) {
+                        console.error("Firebase Initialization Error:", error);
+                        this.showToast('error', '系統錯誤', '無法連線至資料庫，請稍後再試。');
+                    }
+                },
+
+                // ==================== 讀寫資料庫 ====================
+                async fetchIdioms() {
+                    if (!this.userId) return;
+                    const idiomRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms');
+                    const snapshot = await getDocs(idiomRef);
+                    this.idioms = [];
+                    snapshot.forEach(doc => {
+                        this.idioms.push({ id: doc.id, ...doc.data() });
+                    });
+                },
+
+                async fetchLeaderboard() {
+                    if (!this.userId) return;
+                    const scoreRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'scores');
+                    const snapshot = await getDocs(scoreRef);
+                    let scores = [];
+                    snapshot.forEach(doc => {
+                        scores.push({ id: doc.id, ...doc.data() });
+                    });
+                    // 在記憶體中排序取前 50 名 (遵守不使用 orderBy 複雜查詢的規則)
+                    this.leaderboard = scores.sort((a, b) => b.score - a.score).slice(0, 50);
+                },
+
+                async saveScore() {
+                    if (!this.userId) return;
+                    const scoreRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'scores');
+                    await addDoc(scoreRef, {
+                        name: this.playerName,
+                        score: this.game.score,
+                        correct: this.game.correctCount,
+                        wrong: this.game.wrongCount,
+                        timestamp: Date.now()
+                    });
+                    await this.fetchLeaderboard();
+                },
+
+                // ==================== 遊戲邏輯 ====================
+                startGame() {
+                    PlaySound('click');
+                    if(!this.playerName.trim()) return;
+                    localStorage.setItem('idiom_player_name', this.playerName.trim());
+                    
+                    // 初始化狀態
+                    this.game.score = 0;
+                    this.game.health = this.game.maxHealth;
+                    this.game.correctCount = 0;
+                    this.game.wrongCount = 0;
+                    this.view = 'playing';
+                    
+                    this.nextQuestion();
+                },
+
+                nextQuestion() {
+                    this.game.isProcessing = false;
+                    this.game.isShaking = false;
+                    
+                    // 過濾指定課文
+                    let pool = this.idioms;
+                    if (this.selectedLesson !== 'all') {
+                        pool = this.idioms.filter(i => i.lesson === this.selectedLesson);
+                        if (pool.length === 0) pool = this.idioms; // 若該課無題目則退回全部
+                    }
+                    
+                    if (pool.length === 0) {
+                        this.endGame();
+                        return;
+                    }
+
+                    // 隨機抽一題
+                    const randIndex = Math.floor(Math.random() * pool.length);
+                    this.game.currentIdiom = pool[randIndex];
+                    const idiomText = this.game.currentIdiom.text;
+                    
+                    // 決定挖空哪個字 (0-3)
+                    this.game.hiddenIndex = Math.floor(Math.random() * 4);
+                    const correctChar = idiomText[this.game.hiddenIndex];
+                    
+                    // 顯示字元陣列 (挖空的位置為 '?')
+                    this.game.displayChars = idiomText.split('');
+                    this.game.displayChars[this.game.hiddenIndex] = '?';
+                    
+                    // 產生干擾選項
+                    this.game.options = this.generateDistractors(correctChar);
+                    
+                    // 重置並啟動計時器
+                    this.game.timer = this.game.maxTimer;
+                    this.startTimer();
+                },
+
+                generateDistractors(correctChar) {
+                    let chars = new Set([correctChar]);
+                    // 從現有題庫中隨機抓取字
+                    const allChars = this.idioms.map(i => i.text).join('');
+                    const commonChars = "天地玄黃宇宙洪荒日月盈昃辰宿列張寒來暑往秋收冬藏金生麗水玉出崑岡劍號巨闕珠稱夜光果珍李柰菜重芥薑海鹹河淡鱗潛羽翔";
+                    const fallbackChars = allChars + commonChars;
+                    
+                    while (chars.size < 4) {
+                        const randChar = fallbackChars[Math.floor(Math.random() * fallbackChars.length)];
+                        if (randChar.trim() && randChar !== correctChar) {
+                            chars.add(randChar);
+                        }
+                    }
+                    // 洗牌選項
+                    return Array.from(chars).sort(() => Math.random() - 0.5);
+                },
+
+                startTimer() {
+                    clearInterval(this.game.timerInterval);
+                    const tickRate = 100; // ms
+                    const totalTime = 10000; // 10秒
+                    const decrement = (100 / (totalTime / tickRate)); // 每次減少的百分比
+                    
+                    this.game.timerInterval = setInterval(() => {
+                        if (this.view !== 'playing' || this.game.isProcessing) return;
+                        
+                        this.game.timer -= decrement;
+                        
+                        if (this.game.timer <= 0) {
+                            this.game.timer = 0;
+                            this.handleWrong("時間到！");
+                        }
+                    }, tickRate);
+                },
+
+                submitAnswer(option) {
+                    if (this.game.isProcessing) return;
+                    this.game.isProcessing = true;
+                    clearInterval(this.game.timerInterval);
+                    
+                    const correctChar = this.game.currentIdiom.text[this.game.hiddenIndex];
+                    
+                    if (option === correctChar) {
+                        PlaySound('correct');
+                        this.game.score += 10 + Math.floor(this.game.timer / 10); // 剩餘時間加分
+                        this.game.correctCount++;
+                        
+                        // 動畫更新顯示正確字
+                        this.game.displayChars[this.game.hiddenIndex] = correctChar;
+                        
+                        this.showToast('correct', '答對了！', '太棒了，繼續保持！');
+                        setTimeout(() => this.nextQuestion(), 1000);
+                    } else {
+                        this.handleWrong("答錯了！");
+                    }
+                },
+
+                handleWrong(title) {
+                    PlaySound('wrong');
+                    this.game.isShaking = true;
+                    this.game.isProcessing = true;
+                    clearInterval(this.game.timerInterval);
+                    
+                    this.game.health--;
+                    this.game.wrongCount++;
+                    
+                    const correctChar = this.game.currentIdiom.text[this.game.hiddenIndex];
+                    this.game.displayChars[this.game.hiddenIndex] = correctChar; // 顯示正確答案
+                    
+                    this.showToast('error', title, `正確答案是：「${this.game.currentIdiom.text}」`);
+                    
+                    setTimeout(() => {
+                        if (this.game.health <= 0) {
+                            this.endGame();
+                        } else {
+                            this.nextQuestion();
+                        }
+                    }, 2000); // 彈窗停留 2 秒
+                },
+
+                endGame() {
+                    PlaySound('gameover');
+                    clearInterval(this.game.timerInterval);
+                    this.saveScore(); // 非同步寫入，不阻塞畫面
+                    this.view = 'result';
+                },
+
+                // ==================== 彈窗 UI ====================
+                showToast(type, title, message) {
+                    this.toast = { show: true, type, title, message };
+                    setTimeout(() => {
+                        this.toast.show = false;
+                    }, type === 'correct' ? 1000 : 2000);
+                },
+
+                // ==================== 管理員邏輯 ====================
+                async saveIdiom() {
+                    if (!this.userId) return;
+                    PlaySound('click');
+                    const text = this.admin.formText.trim();
+                    const lesson = this.admin.formLesson.trim();
+                    
+                    if (text.length !== 4 || !lesson) return;
+
+                    const idiomRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms');
+                    
+                    try {
+                        if (this.admin.editingId) {
+                            // 更新
+                            const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms', this.admin.editingId);
+                            await updateDoc(docRef, { text, lesson });
+                        } else {
+                            // 新增
+                            await addDoc(idiomRef, { text, lesson, createdAt: Date.now() });
+                        }
+                        
+                        this.admin.formText = '';
+                        this.admin.formLesson = '';
+                        this.admin.editingId = null;
+                        await this.fetchIdioms();
+                    } catch (e) {
+                        console.error("Save Idiom Error:", e);
+                    }
+                },
+
+                editIdiom(item) {
+                    PlaySound('click');
+                    this.admin.formText = item.text;
+                    this.admin.formLesson = item.lesson;
+                    this.admin.editingId = item.id;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                cancelEdit() {
+                    PlaySound('click');
+                    this.admin.formText = '';
+                    this.admin.formLesson = '';
+                    this.admin.editingId = null;
+                },
+
+                async deleteIdiom(id) {
+                    if (!this.userId) return;
+                    PlaySound('click');
+                    try {
+                        await deleteDoc(doc(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms', id));
+                        await this.fetchIdioms();
+                        this.admin.selectedIds = this.admin.selectedIds.filter(selId => selId !== id);
+                    } catch (e) {
+                        console.error("Delete Error:", e);
+                    }
+                },
+
+                async batchDelete() {
+                    if (!this.userId || this.admin.selectedIds.length === 0) return;
+                    PlaySound('click');
+                    // 為了避免 alert，直接進行刪除 (後台可考慮做假 alert，此處直接執行)
+                    try {
+                        // 依序刪除 (遵守規則不使用複雜 batch 寫法，簡單迴圈)
+                        for (const id of this.admin.selectedIds) {
+                            await deleteDoc(doc(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms', id));
+                        }
+                        this.admin.selectedIds = [];
+                        await this.fetchIdioms();
+                    } catch (e) {
+                        console.error("Batch Delete Error:", e);
+                    }
+                },
+
+                // 開發測試用：塞入預設資料
+                async seedDefaultIdioms() {
+                    const defaults = [
+                        { text: '一石二鳥', lesson: '第1課' },
+                        { text: '半途而廢', lesson: '第1課' },
+                        { text: '守株待兔', lesson: '第2課' },
+                        { text: '畫蛇添足', lesson: '第2課' },
+                        { text: '杯弓蛇影', lesson: '第3課' },
+                        { text: '掩耳盜鈴', lesson: '第3課' },
+                        { text: '刻舟求劍', lesson: '第4課' },
+                        { text: '拔苗助長', lesson: '第4課' }
+                    ];
+                    
+                    const idiomRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms');
+                    for (const item of defaults) {
+                        await addDoc(idiomRef, { text: item.text, lesson: item.lesson, createdAt: Date.now() });
+                    }
+                    await this.fetchIdioms();
+                },
+
+                // ==================== 計算屬性 (Getters) ====================
+                get availableLessons() {
+                    const lessons = new Set(this.idioms.map(i => i.lesson));
+                    return Array.from(lessons).sort();
+                },
+
+                get filteredIdioms() {
+                    if (this.admin.filterLesson === 'all') return this.idioms;
+                    return this.idioms.filter(i => i.lesson === this.admin.filterLesson);
+                },
+
+                get timeColorClass() {
+                    if (this.game.timer > 60) return 'bg-gradient-to-r from-blue-400 to-green-400';
+                    if (this.game.timer > 30) return 'bg-gradient-to-r from-yellow-400 to-orange-400';
+                    return 'bg-gradient-to-r from-red-500 to-red-700 animate-pulse';
+                },
+
+                // ==================== 工具函數 ====================
+                formatDate(timestamp) {
+                    if (!timestamp) return '';
+                    const d = new Date(timestamp);
+                    return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                }
+            }));
+        });
+    </script>
+</body>
+</html>
