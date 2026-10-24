@@ -188,7 +188,7 @@
                 </button>
 
                 <!-- 管理後台 -->
-                <button onclick="window.switchView('admin')" class="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full bg-amber-950/60 hover:bg-amber-900/70 border border-amber-500/60 text-amber-300 text-xs sm:text-sm font-bold transition shadow-md shadow-amber-500/10">
+                <button onclick="window.openAdminWithAuth()" class="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full bg-amber-950/60 hover:bg-amber-900/70 border border-amber-500/60 text-amber-300 text-xs sm:text-sm font-bold transition shadow-md shadow-amber-500/10">
                     <i class="fa-solid fa-key text-amber-400"></i>
                     <span>管理後台</span>
                 </button>
@@ -508,9 +508,17 @@
                             <p class="text-xs text-slate-400">支援 Excel 題庫匯入、成語修改、批次刪除、指定挑戰課次與學生成績查詢</p>
                         </div>
                     </div>
-                    <button onclick="window.switchView('start')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold border border-slate-700 transition flex items-center gap-2">
-                        <i class="fa-solid fa-arrow-left"></i> 返回挑戰首頁
-                    </button>
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <button onclick="window.openChangePasswordModal()" class="px-4 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-sm font-bold border border-amber-500/40 transition flex items-center gap-2">
+                            <i class="fa-solid fa-lock"></i> 修改管理密碼
+                        </button>
+                        <button onclick="window.logoutAdmin()" class="px-4 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900/70 text-rose-300 text-sm font-bold border border-rose-500/40 transition flex items-center gap-2">
+                            <i class="fa-solid fa-right-from-bracket"></i> 登出
+                        </button>
+                        <button onclick="window.switchView('start')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold border border-slate-700 transition flex items-center gap-2">
+                            <i class="fa-solid fa-arrow-left"></i> 返回挑戰首頁
+                        </button>
+                    </div>
                 </div>
 
                 <!-- 後台分頁切換 Tabs -->
@@ -768,30 +776,90 @@
         </div>
     </div>
 
-    <!-- ==================== 管理者修改成語彈出視窗 ==================== -->
-    <div id="edit-idiom-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-        <div class="w-full max-w-md rounded-3xl bg-navy-900 border border-amber-500/50 p-6 shadow-2xl">
-            <h3 class="text-xl font-bold text-amber-400 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-pen-to-square"></i> 修改成語資料
+    <!-- ==================== 管理後台密碼登入視窗 ==================== -->
+    <div id="admin-login-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div id="admin-login-box" class="w-full max-w-md rounded-3xl bg-navy-900 border border-amber-500/50 p-6 sm:p-7 shadow-2xl relative">
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 mx-auto flex items-center justify-center text-2xl mb-3">
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-black text-center text-amber-400 mb-1">管理後台登入</h3>
+            <p class="text-xs sm:text-sm text-center text-slate-400 mb-5">請輸入教師管理後台密碼（預設密碼：<span class="text-amber-300 font-mono font-bold">1234</span>）</p>
+
+            <div class="mb-5">
+                <label class="block text-xs font-bold text-slate-300 mb-2">管理員密碼</label>
+                <div class="relative">
+                    <input type="password" id="admin-login-password-input" placeholder="請輸入管理密碼..."
+                        onkeydown="if(event.key==='Enter') window.verifyAdminPassword()"
+                        class="w-full px-4 py-3 rounded-xl bg-navy-950 border border-slate-700 focus:border-amber-400 text-white font-bold text-base outline-none pr-11">
+                    <button type="button" onclick="window.togglePasswordVisibility('admin-login-password-input', this)" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-400">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <p id="admin-login-error" class="hidden text-xs text-rose-400 font-bold mt-2">
+                    <i class="fa-solid fa-circle-exclamation mr-1"></i>密碼錯誤，請重新輸入！
+                </p>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button onclick="window.closeAdminLoginModal()" class="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition">
+                    取消
+                </button>
+                <button onclick="window.verifyAdminPassword()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-navy-950 text-sm font-black shadow-lg shadow-amber-500/20 transition">
+                    驗證登入
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 修改管理後台密碼視窗 ==================== -->
+    <div id="change-password-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="w-full max-w-md rounded-3xl bg-navy-900 border border-amber-500/50 p-6 sm:p-7 shadow-2xl">
+            <h3 class="text-xl font-black text-amber-400 mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-shield-halved"></i> 修改管理後台密碼
             </h3>
-            <input type="hidden" id="edit-idiom-id">
-            <div class="space-y-3.5 mb-6">
+            <p class="text-xs text-slate-400 mb-5">修改後的新密碼將立即同步儲存至雲端資料庫。</p>
+
+            <div class="space-y-4 mb-6">
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1">課次名稱</label>
-                    <input type="text" id="edit-idiom-lesson" class="w-full px-3.5 py-2.5 rounded-xl bg-navy-950 border border-slate-700 text-white text-sm font-bold outline-none focus:border-amber-400">
+                    <label class="block text-xs font-bold text-slate-300 mb-1.5">目前舊密碼</label>
+                    <div class="relative">
+                        <input type="password" id="old-password-input" placeholder="請輸入目前密碼"
+                            class="w-full px-3.5 py-2.5 rounded-xl bg-navy-950 border border-slate-700 focus:border-amber-400 text-white text-sm font-bold outline-none pr-10">
+                        <button type="button" onclick="window.togglePasswordVisibility('old-password-input', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-400">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1">成語 (四字)</label>
-                    <input type="text" id="edit-idiom-word" class="w-full px-3.5 py-2.5 rounded-xl bg-navy-950 border border-slate-700 text-white text-sm font-bold outline-none focus:border-amber-400">
+                    <label class="block text-xs font-bold text-slate-300 mb-1.5">設定新密碼</label>
+                    <div class="relative">
+                        <input type="password" id="new-password-input" placeholder="請輸入新密碼 (至少 4 碼)"
+                            class="w-full px-3.5 py-2.5 rounded-xl bg-navy-950 border border-slate-700 focus:border-amber-400 text-white text-sm font-bold outline-none pr-10">
+                        <button type="button" onclick="window.togglePasswordVisibility('new-password-input', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-400">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1">解釋</label>
-                    <textarea id="edit-idiom-meaning" rows="3" class="w-full px-3.5 py-2.5 rounded-xl bg-navy-950 border border-slate-700 text-white text-sm outline-none focus:border-amber-400"></textarea>
+                    <label class="block text-xs font-bold text-slate-300 mb-1.5">確認新密碼</label>
+                    <div class="relative">
+                        <input type="password" id="confirm-new-password-input" placeholder="請再次輸入新密碼"
+                            onkeydown="if(event.key==='Enter') window.saveNewAdminPassword()"
+                            class="w-full px-3.5 py-2.5 rounded-xl bg-navy-950 border border-slate-700 focus:border-amber-400 text-white text-sm font-bold outline-none pr-10">
+                        <button type="button" onclick="window.togglePasswordVisibility('confirm-new-password-input', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-400">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
+
             <div class="flex items-center justify-end gap-3">
-                <button onclick="window.closeEditIdiomModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold">取消</button>
-                <button onclick="window.saveEditedIdiom()" class="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-navy-950 text-sm font-black">儲存修改</button>
+                <button onclick="window.closeChangePasswordModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold">
+                    取消
+                </button>
+                <button onclick="window.saveNewAdminPassword()" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-navy-950 text-sm font-black shadow-lg shadow-amber-500/20">
+                    儲存新密碼
+                </button>
             </div>
         </div>
     </div>
@@ -872,8 +940,10 @@
             lockLesson: true,
             questionsPerRound: 10,
             timeLimit: 15,
-            maxLives: 3
+            maxLives: 3,
+            adminPassword: "1234"
         };
+        let isAdminAuthenticated = false;
 
         // 管理者勾選刪除集合
         let selectedIdiomIds = new Set();
@@ -1048,7 +1118,7 @@
                     updateAllUI();
                     return;
                 }
-               const firebaseConfig = {
+                const firebaseConfig = {
   apiKey: "AIzaSyAiai_EXmE8kM4iyJxqf5azORkmzbB0xLY",
   authDomain: "idiom-4f7c0.firebaseapp.com",
   projectId: "idiom-4f7c0",
@@ -1130,7 +1200,8 @@
                         lockLesson: data.lockLesson !== undefined ? data.lockLesson : true,
                         questionsPerRound: Number(data.questionsPerRound) || 10,
                         timeLimit: Number(data.timeLimit) || 15,
-                        maxLives: Number(data.maxLives) || 3
+                        maxLives: Number(data.maxLives) || 3,
+                        adminPassword: data.adminPassword ? String(data.adminPassword) : "1234"
                     };
                 }
                 updateAllUI();
@@ -1162,114 +1233,133 @@
         }
 
         // ---------------------------------------------------------
-        // 6. 介面更新與課次統計輔助函式
+        // 7. 畫面切換控制與管理後台密碼驗證
         // ---------------------------------------------------------
-        function getAllLessons() {
-            const set = new Set();
-            idiomsList.forEach(item => {
-                if (item.lesson) set.add(item.lesson);
-            });
-            if (set.size === 0) set.add("第一課 雅量");
-            return Array.from(set);
-        }
-
-        function getIdiomsByLesson(lessonName) {
-            return idiomsList.filter(item => item.lesson === lessonName && item.idiom.length >= 4);
-        }
-
-        function updateAllUI() {
-            const lessons = getAllLessons();
-            // 確保 designatedLesson 存在於課次清單中
-            if (!lessons.includes(gameSettings.designatedLesson) && lessons.length > 0) {
-                gameSettings.designatedLesson = lessons[0];
+        window.openAdminWithAuth = function () {
+            playSound('click');
+            if (isAdminAuthenticated) {
+                window.switchView('admin');
+                return;
             }
-
-            const currentLesson = gameSettings.designatedLesson;
-            const currentLessonIdioms = getIdiomsByLesson(currentLesson);
-
-            // 更新頂部導覽列與啟動畫面
-            document.getElementById('nav-designated-lesson').textContent = currentLesson;
-            document.getElementById('start-designated-lesson').textContent = currentLesson;
-            document.getElementById('start-idiom-count').textContent = `${currentLessonIdioms.length} 題`;
-            document.getElementById('rule-time-limit').textContent = `${gameSettings.timeLimit} 秒`;
-            document.getElementById('rule-max-lives').textContent = `${gameSettings.maxLives} 顆愛心生命值`;
-
-            // 處理強制指定 vs 開放選擇課次
-            const lockedBox = document.getElementById('locked-lesson-box');
-            const unlockedSelect = document.getElementById('unlocked-lesson-select');
-            const lockLabel = document.getElementById('label-lock-status');
-
-            if (gameSettings.lockLesson) {
-                lockedBox.classList.remove('hidden');
-                lockedBox.classList.add('flex');
-                unlockedSelect.classList.add('hidden');
-                lockLabel.textContent = "(管理者已指定)";
-            } else {
-                lockedBox.classList.add('hidden');
-                lockedBox.classList.remove('flex');
-                unlockedSelect.classList.remove('hidden');
-                lockLabel.textContent = "(可自由切換課次)";
-                unlockedSelect.innerHTML = lessons.map(l =>
-                    `<option value="${l}" ${l === currentLesson ? 'selected' : ''}>📌 ${l} (${getIdiomsByLesson(l).length} 題)</option>`
-                ).join('');
-            }
-
-            // 更新各處下拉選單
-            populateLessonDropdowns(lessons);
-            renderAdminIdiomTable();
-            renderAdminScoresTable();
-            renderPublicLeaderboard();
-        }
-
-        window.onPlayerSelectLesson = function (lessonName) {
-            gameSettings.designatedLesson = lessonName;
-            const count = getIdiomsByLesson(lessonName).length;
-            document.getElementById('start-idiom-count').textContent = `${count} 題`;
-            document.getElementById('nav-designated-lesson').textContent = lessonName;
+            const modal = document.getElementById('admin-login-modal');
+            const input = document.getElementById('admin-login-password-input');
+            const err = document.getElementById('admin-login-error');
+            input.value = '';
+            err.classList.add('hidden');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => input.focus(), 50);
         };
 
-        function populateLessonDropdowns(lessons) {
-            // 1. 英雄榜篩選
-            const lbSelect = document.getElementById('leaderboard-filter-lesson');
-            const prevLbVal = lbSelect.value;
-            lbSelect.innerHTML = `<option value="ALL">全部課次排行</option>` +
-                lessons.map(l => `<option value="${l}">${l}</option>`).join('');
-            if (lessons.includes(prevLbVal) || prevLbVal === 'ALL') {
-                lbSelect.value = prevLbVal;
+        window.closeAdminLoginModal = function () {
+            const modal = document.getElementById('admin-login-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        window.verifyAdminPassword = function () {
+            const input = document.getElementById('admin-login-password-input');
+            const err = document.getElementById('admin-login-error');
+            const entered = (input.value || '').trim();
+            const currentPwd = String(gameSettings.adminPassword || '1234');
+
+            if (entered === currentPwd) {
+                playSound('correct');
+                isAdminAuthenticated = true;
+                window.closeAdminLoginModal();
+                window.switchView('admin');
+                showToast("驗證成功，歡迎進入管理後台！", "success");
             } else {
-                lbSelect.value = gameSettings.designatedLesson;
+                playSound('wrong');
+                err.classList.remove('hidden');
+                const box = document.getElementById('admin-login-box');
+                box.classList.remove('animate-shake');
+                void box.offsetWidth;
+                box.classList.add('animate-shake');
+                input.select();
+            }
+        };
+
+        window.logoutAdmin = function () {
+            isAdminAuthenticated = false;
+            showToast("已登出管理後台", "info");
+            window.switchView('start');
+        };
+
+        window.openChangePasswordModal = function () {
+            playSound('click');
+            document.getElementById('old-password-input').value = '';
+            document.getElementById('new-password-input').value = '';
+            document.getElementById('confirm-new-password-input').value = '';
+            const modal = document.getElementById('change-password-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => document.getElementById('old-password-input').focus(), 50);
+        };
+
+        window.closeChangePasswordModal = function () {
+            const modal = document.getElementById('change-password-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        window.saveNewAdminPassword = async function () {
+            const oldPwd = (document.getElementById('old-password-input').value || '').trim();
+            const newPwd = (document.getElementById('new-password-input').value || '').trim();
+            const confirmPwd = (document.getElementById('confirm-new-password-input').value || '').trim();
+            const currentPwd = String(gameSettings.adminPassword || '1234');
+
+            if (oldPwd !== currentPwd) {
+                playSound('wrong');
+                showToast("目前舊密碼輸入不正確！", "error");
+                return;
+            }
+            if (!newPwd || newPwd.length < 4) {
+                playSound('wrong');
+                showToast("新密碼長度請至少設定 4 個字元！", "error");
+                return;
+            }
+            if (newPwd !== confirmPwd) {
+                playSound('wrong');
+                showToast("兩次輸入的新密碼不一致，請重新確認！", "error");
+                return;
             }
 
-            // 2. 後台題庫篩選
-            const adminIdiomFilter = document.getElementById('admin-idiom-lesson-filter');
-            const prevIdiomVal = adminIdiomFilter.value;
-            adminIdiomFilter.innerHTML = `<option value="ALL">全部課次 (${idiomsList.length})</option>` +
-                lessons.map(l => `<option value="${l}">${l} (${getIdiomsByLesson(l).length})</option>`).join('');
-            if (lessons.includes(prevIdiomVal) || prevIdiomVal === 'ALL') adminIdiomFilter.value = prevIdiomVal;
+            gameSettings.adminPassword = newPwd;
 
-            // 3. 後台設定課次選單
-            const settingLessonSelect = document.getElementById('setting-designated-lesson');
-            settingLessonSelect.innerHTML = lessons.map(l =>
-                `<option value="${l}" ${l === gameSettings.designatedLesson ? 'selected' : ''}>${l} (共 ${getIdiomsByLesson(l).length} 題)</option>`
-            ).join('');
-            document.getElementById('setting-lock-lesson').checked = gameSettings.lockLesson;
-            document.getElementById('setting-questions-count').value = gameSettings.questionsPerRound;
-            document.getElementById('setting-time-limit').value = gameSettings.timeLimit;
-            document.getElementById('setting-max-lives').value = gameSettings.maxLives;
+            if (isCloudReady && currentUser && db) {
+                try {
+                    const configDoc = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'config');
+                    await setDoc(configDoc, gameSettings);
+                } catch (e) {
+                    console.error("更新密碼至雲端失敗:", e);
+                }
+            }
 
-            // 4. 後台成績篩選
-            const adminScoreFilter = document.getElementById('admin-score-lesson-filter');
-            const prevScoreVal = adminScoreFilter.value;
-            adminScoreFilter.innerHTML = `<option value="ALL">全部課次</option>` +
-                lessons.map(l => `<option value="${l}">${l}</option>`).join('');
-            if (lessons.includes(prevScoreVal) || prevScoreVal === 'ALL') adminScoreFilter.value = prevScoreVal;
-        }
+            playSound('correct');
+            window.closeChangePasswordModal();
+            showToast("管理後台密碼已成功更新！", "success");
+        };
 
-        // ---------------------------------------------------------
-        // 7. 畫面切換控制
-        // ---------------------------------------------------------
+        window.togglePasswordVisibility = function (inputId, btnEl) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const icon = btnEl.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (icon) icon.className = 'fa-solid fa-eye-slash text-amber-400';
+            } else {
+                input.type = 'password';
+                if (icon) icon.className = 'fa-solid fa-eye';
+            }
+        };
+
         window.switchView = function (viewName) {
             playSound('click');
+            if (viewName === 'admin' && !isAdminAuthenticated) {
+                window.openAdminWithAuth();
+                return;
+            }
             if (activeGame.timerInterval) {
                 clearInterval(activeGame.timerInterval);
                 activeGame.timerInterval = null;
@@ -2129,7 +2219,14 @@
             const timeLimit = Math.max(5, Number(document.getElementById('setting-time-limit').value) || 15);
             const maxLives = Math.max(1, Number(document.getElementById('setting-max-lives').value) || 3);
 
-            gameSettings = { designatedLesson, lockLesson, questionsPerRound, timeLimit, maxLives };
+            gameSettings = {
+                ...gameSettings,
+                designatedLesson,
+                lockLesson,
+                questionsPerRound,
+                timeLimit,
+                maxLives
+            };
 
             if (isCloudReady && currentUser && db) {
                 try {
