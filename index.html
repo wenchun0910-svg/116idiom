@@ -423,9 +423,14 @@
                     // 🌟 ======================================================== 🌟
                     // 為避免變數衝突，這裡使用 myFirebaseConfig 命名。
                     let myFirebaseConfig = {};
+      
+                   
                     
+                    // 自動判斷系統環境變數 (防呆機制)
+                    if (typeof __firebase_config !== 'undefined') {
+                                 
                  
-               const firebaseConfig = {
+               const myfirebaseConfig = {
   apiKey: "AIzaSyAiai_EXmE8kM4iyJxqf5azORkmzbB0xLY",
   authDomain: "idiom-4f7c0.firebaseapp.com",
   projectId: "idiom-4f7c0",
@@ -433,11 +438,6 @@
   messagingSenderId: "1078951444674",
   appId: "1:1078951444674:web:e6fe94ac4dbba15ed37b5b"
 };
-                   
-                    
-                    // 自動判斷系統環境變數 (防呆機制)
-                    if (typeof __firebase_config !== 'undefined') {
-                        myFirebaseConfig = typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
                     } else if (Object.keys(myFirebaseConfig).length === 0) {
                         console.warn("未偵測到 Firebase 環境變數，啟用本地防呆設定。");
                         myFirebaseConfig = { apiKey: "local-dev", projectId: "local-dev" };
