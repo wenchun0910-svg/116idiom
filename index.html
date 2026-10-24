@@ -5,722 +5,484 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>成語填填看</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/max32002/iansui/iansui.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
         body {
-            font-family: 'Noto Sans TC', sans-serif;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            color: #ffffff;
-            touch-action: manipulation; /* 防止雙擊縮放 */
+            font-family: 'Iansui', 'Noto Serif TC', serif;
+            background-color: #fce7f3; /* 柔和的粉底色 */
+            background-image: radial-gradient(#fbcfe8 2px, transparent 2px);
+            background-size: 30px 30px;
+            user-select: none;
         }
-        
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        @keyframes pop {
-            0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
+        .chalkboard {
+            background-color: #1e293b;
+            border: 12px solid #8b5cf6; /* 高對比紫色邊框 */
+            border-radius: 20px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 10px 25px rgba(0,0,0,0.2);
+            color: #f8fafc;
         }
-        .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-5px); }
-            40%, 80% { transform: translateX(5px); }
+        .btn-press {
+            transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .animate-shake { animation: shake 0.4s ease-in-out; }
+        .btn-press:active {
+            transform: scale(0.95);
+        }
+        .bar-transition {
+            transition: width 0.1s linear;
+        }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4 overflow-hidden">
+<body class="min-h-screen flex items-center justify-center p-4">
 
-    <!-- 遊戲主要容器 (綁定 Alpine 狀態) -->
-    <div x-data="gameApp" class="relative w-full max-w-md bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-700 overflow-hidden h-[85vh] flex flex-col">
+    <!-- 遊戲主容器 -->
+    <div id="app" x-data="gameApp" x-cloak class="w-full max-w-3xl chalkboard relative overflow-hidden">
         
-        <!-- 全域通知彈窗 -->
-        <div x-show="toast.show" style="display: none;"
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0 translate-y-4"
-             x-transition:enter-end="opacity-100 translate-y-0"
-             x-transition:leave="transition ease-in duration-200"
-             x-transition:leave-start="opacity-100 translate-y-0"
-             x-transition:leave-end="opacity-0 translate-y-4"
-             class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-3/4 max-w-sm rounded-2xl p-6 text-center shadow-2xl border-2"
-             :class="toast.type === 'correct' ? 'bg-green-600 border-green-400' : 'bg-red-600 border-red-400'">
-            <h2 class="text-3xl font-black mb-2" x-text="toast.title"></h2>
-            <p class="text-lg font-bold" x-text="toast.message"></p>
+        <!-- 1. 載入畫面 -->
+        <div x-show="view === 'loading'" class="h-96 flex flex-col items-center justify-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-yellow-400 mb-4"></div>
+            <h2 class="text-2xl tracking-widest">系統初始化中...</h2>
         </div>
 
-        <!-- ==================== 1. 載入畫面 ==================== -->
-        <div x-show="view === 'loading'" class="flex-1 flex flex-col items-center justify-center space-y-4">
-            <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <p class="text-blue-300 font-bold tracking-widest animate-pulse">系統初始化中...</p>
-            <p x-show="isOffline" style="display:none;" class="text-yellow-400 text-sm mt-2 font-bold bg-yellow-900/50 px-3 py-1 rounded-full">目前為單機測試模式</p>
-        </div>
-
-        <!-- ==================== 2. 首頁 ==================== -->
-        <div x-show="view === 'home'" class="flex-1 flex flex-col items-center justify-center p-6 space-y-8 animate-pop" style="display: none;">
-            <div class="text-center space-y-2">
-                <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 filter drop-shadow-lg">
-                    成語填填看
-                </h1>
-                <p class="text-gray-400 font-bold tracking-wider">挑戰你的國學常識</p>
-                <div x-show="isOffline" class="text-xs text-yellow-500 bg-yellow-900/30 py-1 px-2 rounded-lg border border-yellow-700/50 mt-2">
-                    ⚠️ 離線單機模式（未連結資料庫）
-                </div>
-            </div>
-
-            <div class="w-full space-y-4">
-                <input type="text" x-model="playerName" placeholder="請輸入挑戰者名稱" 
-                       class="w-full bg-gray-800 border-2 border-gray-600 rounded-xl px-4 py-3 text-center text-lg text-white font-bold focus:outline-none focus:border-yellow-400 transition-colors">
-                
-                <div class="relative">
-                    <select x-model="selectedLesson" class="w-full bg-gray-800 border-2 border-gray-600 rounded-xl px-4 py-3 text-center text-lg text-white font-bold focus:outline-none focus:border-yellow-400 appearance-none">
-                        <option value="all">全部課文 (隨機抽題)</option>
-                        <template x-for="lesson in availableLessons" :key="lesson">
-                            <option :value="lesson" x-text="lesson"></option>
-                        </template>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">▼</div>
-                </div>
-
-                <button @click="startGame()" 
-                        class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-black text-xl py-4 rounded-xl shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        :disabled="!playerName.trim() || idioms.length === 0">
-                    開始挑戰
-                </button>
-            </div>
-
-            <div class="flex space-x-4 w-full pt-4 border-t border-gray-700">
-                <button @click="view = 'leaderboard'" class="flex-1 bg-gray-800 hover:bg-gray-700 py-3 rounded-xl font-bold transition-colors active:scale-95 text-blue-300">
-                    🏆 排行榜
-                </button>
-                <button @click="openAdminLogin()" class="flex-1 bg-gray-800 hover:bg-gray-700 py-3 rounded-xl font-bold transition-colors active:scale-95 text-purple-300">
-                    ⚙️ 管理員
-                </button>
-            </div>
-        </div>
-
-        <!-- ==================== 2.5. 管理員登入 ==================== -->
-        <div x-show="view === 'admin_login'" class="flex-1 flex flex-col items-center justify-center p-6 space-y-6 animate-pop" style="display: none;">
-            <div class="text-center">
-                <div class="text-6xl mb-4">🔐</div>
-                <h2 class="text-3xl font-black text-purple-400 mb-2">管理員登入</h2>
-                <p class="text-gray-400 text-sm mb-6">預設密碼為 <span class="text-white font-bold">admin</span></p>
-            </div>
+        <!-- 2. 首頁 / 登入畫面 -->
+        <div x-show="view === 'home'" class="p-8 h-96 flex flex-col items-center justify-center">
+            <h1 class="text-5xl font-bold text-yellow-300 mb-8 drop-shadow-md">成語填填看</h1>
             
-            <div class="w-full space-y-4">
-                <input type="password" x-model="admin.loginInput" placeholder="請輸入管理員密碼" 
-                       class="w-full bg-gray-800 border-2 border-gray-600 rounded-xl px-4 py-3 text-center text-lg text-white font-bold focus:outline-none focus:border-purple-400 transition-colors">
-                
-                <button @click="verifyAdminLogin()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black text-xl py-4 rounded-xl shadow-lg transform active:scale-95 transition-all">
-                    登入後台
+            <div x-show="isOffline" class="bg-red-500 text-white px-4 py-1 rounded-full text-sm mb-4 animate-pulse">
+                目前為離線單機模式 (未連結資料庫)
+            </div>
+
+            <input type="text" x-model="playerName" placeholder="請輸入您的姓名..." 
+                   class="text-2xl text-center p-3 rounded-xl border-4 border-yellow-400 bg-slate-800 text-white placeholder-slate-400 focus:outline-none focus:border-yellow-200 mb-6 w-64 transition-colors">
+            
+            <div class="flex gap-4">
+                <button @click="startGame" class="btn-press bg-yellow-400 text-slate-900 text-2xl font-bold py-3 px-8 rounded-full shadow-lg hover:bg-yellow-300">
+                    開始遊戲
                 </button>
-                <button @click="view = 'home'" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold text-lg py-3 rounded-xl transform active:scale-95 transition-all">
-                    返回
+                <button @click="enterAdmin" class="btn-press bg-slate-600 text-white text-xl py-3 px-6 rounded-full shadow-lg hover:bg-slate-500">
+                    管理員
                 </button>
             </div>
+            <div class="absolute bottom-4 right-6 text-sm text-slate-400 opacity-70">© 文君製作</div>
         </div>
 
-        <!-- ==================== 3. 遊戲畫面 ==================== -->
-        <div x-show="view === 'playing'" class="flex-1 flex flex-col p-4 w-full h-full" style="display: none;">
-            <!-- 頂部資訊區: 標題與生命值 -->
-            <div class="flex justify-between items-center mb-4">
-                <div class="text-gray-400 font-bold bg-gray-800 px-3 py-1 rounded-full text-sm">
-                    得分: <span class="text-yellow-400 text-lg" x-text="game.score"></span>
+        <!-- 3. 遊戲進行畫面 -->
+        <div x-show="view === 'game'" class="p-6">
+            <!-- 血條區塊 -->
+            <div class="flex justify-between items-center mb-4 gap-4">
+                <div class="flex-1">
+                    <div class="text-sm text-yellow-300 mb-1 font-bold">剩餘時間</div>
+                    <div class="h-4 bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-blue-500 bar-transition" :style="`width: ${(timeLeft / maxTime) * 100}%`"></div>
+                    </div>
                 </div>
-                <div class="flex space-x-1">
-                    <template x-for="i in game.maxHealth">
-                        <svg class="w-6 h-6 transition-all duration-300" :class="i <= game.health ? 'text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-gray-600'" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
-                        </svg>
+                <div class="flex-1">
+                    <div class="text-sm text-red-300 mb-1 font-bold">生命值</div>
+                    <div class="h-4 bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-red-500 bar-transition" :style="`width: ${(hp / maxHp) * 100}%`"></div>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold text-yellow-400">第 <span x-text="currentQuestionIndex + 1"></span> 題</div>
+            </div>
+
+            <!-- 題目區塊 -->
+            <div class="flex justify-center items-center h-40 my-8">
+                <div class="text-7xl font-bold tracking-[0.2em] flex gap-4">
+                    <template x-for="(char, index) in currentIdiom.split('')">
+                        <span class="w-20 h-24 flex items-center justify-center border-b-8 border-yellow-400"
+                              :class="index === blankIndex ? 'text-yellow-400 bg-slate-700 rounded-lg' : 'text-white'"
+                              x-text="index === blankIndex ? '？' : char">
+                        </span>
                     </template>
                 </div>
             </div>
 
-            <!-- 時間血條 -->
-            <div class="w-full bg-gray-800 rounded-full h-3 mb-6 overflow-hidden border border-gray-700 shadow-inner">
-                <div class="h-full rounded-full transition-all duration-100 ease-linear"
-                     :class="timeColorClass"
-                     :style="`width: ${(game.timer / game.maxTimer) * 100}%`"></div>
-            </div>
-
-            <!-- 題目區域 -->
-            <div class="flex-1 flex flex-col justify-center items-center space-y-8" :class="{ 'animate-shake': game.isShaking }">
-                <div class="text-center">
-                    <p class="text-gray-400 font-bold mb-2 text-lg" x-text="game.currentIdiom?.lesson || ''"></p>
-                    <div class="flex justify-center space-x-3">
-                        <template x-for="(char, index) in game.displayChars" :key="index">
-                            <div class="w-16 h-20 sm:w-20 sm:h-24 bg-gray-800 border-2 border-gray-600 rounded-xl flex items-center justify-center text-4xl sm:text-5xl font-black shadow-lg"
-                                 :class="{'bg-blue-900/50 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]': index === game.hiddenIndex, 'text-yellow-400': index !== game.hiddenIndex, 'text-white': index === game.hiddenIndex}">
-                                <span x-text="char"></span>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- 選項按鈕 -->
-                <div class="grid grid-cols-2 gap-4 w-full max-w-xs mt-8">
-                    <template x-for="(option, index) in game.options" :key="index">
-                        <button @click="submitAnswer(option)"
-                                :disabled="game.isProcessing"
-                                class="bg-gradient-to-b from-gray-700 to-gray-800 hover:from-blue-600 hover:to-blue-800 border border-gray-600 rounded-xl py-5 text-3xl font-black shadow-md transform active:scale-95 transition-all disabled:opacity-50 text-white">
-                            <span x-text="option"></span>
-                        </button>
-                    </template>
-                </div>
-            </div>
-        </div>
-
-        <!-- ==================== 4. 結算畫面 ==================== -->
-        <div x-show="view === 'result'" class="flex-1 flex flex-col items-center justify-center p-6 space-y-6 animate-pop" style="display: none;">
-            <h2 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">遊戲結束</h2>
-            
-            <div class="bg-gray-800 w-full rounded-2xl p-6 shadow-lg border border-gray-700 space-y-4 text-center">
-                <p class="text-gray-400 font-bold text-lg">玩家：<span class="text-white" x-text="playerName"></span></p>
-                <div class="text-6xl font-black text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" x-text="game.score"></div>
-                <p class="text-gray-400 font-bold">總得分</p>
-                
-                <div class="flex justify-center space-x-8 pt-4 border-t border-gray-700">
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-green-400" x-text="game.correctCount"></div>
-                        <div class="text-sm text-gray-400">答對</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-red-400" x-text="game.wrongCount"></div>
-                        <div class="text-sm text-gray-400">答錯</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="w-full space-y-3">
-                <button @click="view = 'leaderboard'" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg py-4 rounded-xl shadow-lg transform active:scale-95 transition-all">
-                    🏆 查看排行榜
-                </button>
-                <button @click="view = 'home'" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold text-lg py-4 rounded-xl shadow-lg transform active:scale-95 transition-all">
-                    回首頁
-                </button>
-            </div>
-        </div>
-
-        <!-- ==================== 5. 排行榜畫面 ==================== -->
-        <div x-show="view === 'leaderboard'" class="flex-1 flex flex-col p-6 animate-pop" style="display: none;">
-            <h2 class="text-3xl font-black text-center text-blue-400 mb-6 flex items-center justify-center">
-                <span class="mr-2">🏆</span> 英雄榜
-            </h2>
-            
-            <div class="flex-1 bg-gray-800 rounded-xl border border-gray-700 overflow-y-auto no-scrollbar p-2 space-y-2 relative">
-                <template x-if="leaderboard.length === 0">
-                    <div class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 font-bold space-y-2">
-                        <span>尚無成績紀錄</span>
-                        <span x-show="isOffline" class="text-xs text-yellow-600">單機模式不保留成績</span>
-                    </div>
-                </template>
-                <template x-for="(entry, index) in leaderboard" :key="index">
-                    <div class="flex items-center justify-between p-3 rounded-lg"
-                         :class="index === 0 ? 'bg-yellow-500/20 border border-yellow-500/50' : (index === 1 ? 'bg-gray-300/20 border border-gray-300/50' : (index === 2 ? 'bg-orange-700/20 border border-orange-700/50' : 'bg-gray-700/50'))">
-                        <div class="flex items-center space-x-3">
-                            <span class="text-xl font-black w-8 text-center" 
-                                  :class="index === 0 ? 'text-yellow-400' : (index === 1 ? 'text-gray-300' : (index === 2 ? 'text-orange-400' : 'text-gray-500'))" 
-                                  x-text="`#${index + 1}`"></span>
-                            <div>
-                                <p class="font-bold text-white text-lg" x-text="entry.name"></p>
-                                <p class="text-xs text-gray-400" x-text="formatDate(entry.timestamp)"></p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-2xl font-black text-yellow-400" x-text="entry.score"></p>
-                        </div>
-                    </div>
-                </template>
-            </div>
-
-            <button @click="view = 'home'" class="w-full mt-4 bg-gray-700 hover:bg-gray-600 text-white font-bold text-lg py-3 rounded-xl shadow-lg transform active:scale-95 transition-all">
-                回首頁
-            </button>
-        </div>
-
-        <!-- ==================== 6. 管理員介面 ==================== -->
-        <div x-show="view === 'admin'" class="flex-1 flex flex-col p-4 animate-pop overflow-hidden" style="display: none;">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-black text-purple-400 flex items-center">
-                    ⚙️ 管理中心
-                    <span x-show="isOffline" class="ml-2 text-xs bg-yellow-900/50 text-yellow-500 px-2 py-1 rounded-full border border-yellow-700">單機</span>
-                </h2>
-                <button @click="view = 'home'" class="text-sm bg-gray-700 px-3 py-2 rounded-lg font-bold hover:bg-gray-600 active:scale-95">返回首頁</button>
-            </div>
-            
-            <!-- 修改密碼區塊 -->
-            <div class="bg-gray-800 p-3 rounded-xl border border-gray-700 mb-4 shadow-md flex items-center space-x-2">
-                <span class="text-gray-400 text-sm whitespace-nowrap font-bold">🔐 變更密碼</span>
-                <input type="text" x-model="admin.newPasswordInput" placeholder="輸入新密碼" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-2 py-1.5 text-white text-sm focus:outline-none focus:border-purple-400">
-                <button @click="changeAdminPassword()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold px-3 py-1.5 rounded-lg active:scale-95 whitespace-nowrap">更新</button>
-            </div>
-
-            <!-- 新增表單 -->
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-4 shadow-md">
-                <h3 class="font-bold text-gray-300 mb-3" x-text="admin.editingId ? '📝 編輯成語' : '➕ 新增成語'"></h3>
-                <div class="flex space-x-2 mb-2">
-                    <input type="text" x-model="admin.formText" placeholder="四字成語 (如: 一石二鳥)" maxlength="4" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400">
-                    <input type="text" x-model="admin.formLesson" placeholder="課文名稱 (如: 第一課)" class="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-400">
-                </div>
-                <div class="flex space-x-2">
-                    <button @click="saveIdiom()" 
-                            class="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-lg transform active:scale-95 transition-all disabled:opacity-50"
-                            :disabled="admin.formText.length !== 4 || !admin.formLesson.trim()">
-                        <span x-text="admin.editingId ? '儲存修改' : '新增入庫'"></span>
+            <!-- 選項區塊 -->
+            <div class="grid grid-cols-2 gap-4 max-w-lg mx-auto mb-4">
+                <template x-for="option in options">
+                    <button @click="checkAnswer(option)" 
+                            :disabled="isChecking"
+                            class="btn-press bg-slate-700 hover:bg-slate-600 text-yellow-300 text-4xl font-bold py-4 rounded-xl border-2 border-slate-500 transition-colors disabled:opacity-50">
+                        <span x-text="option"></span>
                     </button>
-                    <button x-show="admin.editingId" @click="cancelEdit()" class="px-4 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 rounded-lg active:scale-95">取消</button>
+                </template>
+            </div>
+        </div>
+
+        <!-- 4. 結算畫面 -->
+        <div x-show="view === 'result'" class="p-8 flex flex-col items-center justify-center">
+            <h2 class="text-5xl font-bold text-yellow-300 mb-6">遊戲結束</h2>
+            <div class="text-2xl mb-4 bg-slate-800 p-6 rounded-2xl border-2 border-slate-600 w-full max-w-md">
+                <p class="mb-2">玩家：<span class="text-yellow-400" x-text="playerName"></span></p>
+                <p class="mb-2">答對題數：<span class="text-green-400" x-text="score"></span></p>
+                <p>答錯題數：<span class="text-red-400" x-text="wrongCount"></span></p>
+            </div>
+            <div class="flex gap-4 mt-6">
+                <button @click="view = 'home'" class="btn-press bg-blue-500 text-white text-xl py-3 px-8 rounded-full hover:bg-blue-400">回首頁</button>
+                <button @click="view = 'leaderboard'" class="btn-press bg-yellow-500 text-slate-900 text-xl py-3 px-8 rounded-full hover:bg-yellow-400 font-bold">查看排名</button>
+            </div>
+        </div>
+
+        <!-- 5. 排名畫面 -->
+        <div x-show="view === 'leaderboard'" class="p-8 flex flex-col h-full">
+            <h2 class="text-3xl font-bold text-yellow-300 mb-4 text-center">英雄榜</h2>
+            <div class="flex-1 bg-slate-800 rounded-xl p-4 overflow-y-auto border-2 border-slate-600 h-64 mb-4">
+                <template x-for="(record, index) in leaderboardData">
+                    <div class="flex justify-between items-center border-b border-slate-700 py-2 text-lg">
+                        <div>
+                            <span class="inline-block w-8 text-yellow-500 font-bold" x-text="`#${index + 1}`"></span>
+                            <span x-text="record.name" class="text-white"></span>
+                        </div>
+                        <div class="text-green-400 font-bold" x-text="`${record.score} 題`"></div>
+                    </div>
+                </template>
+                <div x-show="leaderboardData.length === 0" class="text-center text-slate-400 mt-8">尚無排名紀錄</div>
+            </div>
+            <button @click="view = 'home'" class="btn-press bg-slate-600 text-white text-lg py-2 px-6 rounded-full mx-auto block hover:bg-slate-500">返回</button>
+        </div>
+
+        <!-- 6. 管理員登入與後台 -->
+        <div x-show="view === 'admin'" class="p-8 flex flex-col h-full">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-yellow-300">題庫管理後台</h2>
+                <button @click="view = 'home'" class="text-slate-400 hover:text-white">✕ 關閉</button>
+            </div>
+
+            <!-- 登入卡控 -->
+            <div x-show="!isAdminLoggedIn" class="flex flex-col items-center justify-center h-48">
+                <input type="password" x-model="adminPasswordInput" placeholder="請輸入管理員密碼" class="text-xl p-2 rounded border border-slate-500 bg-slate-700 text-white mb-4 text-center">
+                <button @click="loginAdmin" class="btn-press bg-yellow-500 text-slate-900 px-6 py-2 rounded-full font-bold">登入</button>
+                <p class="text-red-400 mt-2 text-sm" x-show="adminLoginError">密碼錯誤</p>
+                <p class="text-slate-400 mt-4 text-xs">預設密碼為: admin</p>
+            </div>
+
+            <!-- 後台管理介面 -->
+            <div x-show="isAdminLoggedIn" class="flex flex-col gap-4">
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-600">
+                    <h3 class="text-xl text-yellow-300 mb-2">新增成語</h3>
+                    <div class="flex gap-2">
+                        <input type="text" x-model="newLesson" placeholder="課別 (例: 第一課)" class="flex-1 p-2 rounded bg-slate-700 text-white text-sm">
+                        <input type="text" x-model="newIdiom" placeholder="四字成語 (例: 一馬當先)" class="flex-2 p-2 rounded bg-slate-700 text-white text-sm">
+                        <button @click="addIdiom" class="bg-green-500 hover:bg-green-400 text-white px-4 py-2 rounded">新增</button>
+                    </div>
+                </div>
+
+                <div class="flex-1 bg-slate-800 rounded-xl p-4 overflow-y-auto border border-slate-600 h-48">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead>
+                            <tr class="border-b border-slate-600 text-yellow-400">
+                                <th class="pb-2">課別</th>
+                                <th class="pb-2">成語</th>
+                                <th class="pb-2 text-right">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in idiomsList">
+                                <tr class="border-b border-slate-700">
+                                    <td class="py-2" x-text="item.lesson"></td>
+                                    <td class="py-2 text-white text-lg tracking-widest" x-text="item.word"></td>
+                                    <td class="py-2 text-right">
+                                        <button @click="deleteIdiom(item.id)" class="text-red-400 hover:text-red-300 text-xs border border-red-400 px-2 py-1 rounded">刪除</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
                 </div>
             </div>
+        </div>
 
-            <!-- 篩選與操作列 -->
-            <div class="flex justify-between items-center mb-2">
-                <select x-model="admin.filterLesson" class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm focus:outline-none">
-                    <option value="all">顯示全部</option>
-                    <template x-for="lesson in availableLessons" :key="lesson">
-                        <option :value="lesson" x-text="lesson"></option>
-                    </template>
-                </select>
-                <button @click="batchDelete()" x-show="admin.selectedIds.length > 0" class="bg-red-600 hover:bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-lg shadow active:scale-95 transition-all">
-                    刪除所選 (<span x-text="admin.selectedIds.length"></span>)
-                </button>
-            </div>
-
-            <!-- 成語清單 -->
-            <div class="flex-1 bg-gray-800 rounded-xl border border-gray-700 overflow-y-auto no-scrollbar p-2">
-                <template x-if="filteredIdioms.length === 0">
-                    <p class="text-center text-gray-500 py-6 text-sm font-bold">此課文目前沒有成語</p>
-                </template>
-                <ul class="space-y-2">
-                    <template x-for="item in filteredIdioms" :key="item.id">
-                        <li class="flex items-center justify-between bg-gray-900 p-3 rounded-lg border border-gray-700">
-                            <div class="flex items-center space-x-3">
-                                <input type="checkbox" :value="item.id" x-model="admin.selectedIds" class="w-5 h-5 text-purple-600 rounded border-gray-600 focus:ring-purple-500 bg-gray-700 cursor-pointer">
-                                <div>
-                                    <span class="font-black text-lg tracking-widest text-white" x-text="item.text"></span>
-                                    <span class="text-xs font-bold text-gray-400 bg-gray-800 px-2 py-0.5 rounded-full ml-2" x-text="item.lesson"></span>
-                                </div>
-                            </div>
-                            <div class="flex space-x-3">
-                                <button @click="editIdiom(item)" class="text-blue-400 hover:text-blue-300 text-sm font-bold active:scale-95">編輯</button>
-                                <button @click="deleteIdiom(item.id)" class="text-red-400 hover:text-red-300 text-sm font-bold active:scale-95">刪除</button>
-                            </div>
-                        </li>
-                    </template>
-                </ul>
+        <!-- 答錯提示彈窗 -->
+        <div x-show="showWrongAnswerPopup" 
+             x-transition.duration.300ms
+             class="absolute inset-0 bg-black/80 flex items-center justify-center z-50">
+            <div class="bg-slate-800 border-4 border-red-500 rounded-2xl p-8 text-center shadow-2xl transform scale-110">
+                <h3 class="text-3xl text-red-400 font-bold mb-4">答錯囉！</h3>
+                <p class="text-xl text-slate-300 mb-2">正確答案是：</p>
+                <div class="text-6xl font-bold text-yellow-300 tracking-[0.2em] mb-4" x-text="correctAnswer"></div>
+                <div class="text-sm text-slate-400">稍後自動進入下一題...</div>
             </div>
         </div>
 
     </div>
 
-    <!-- Firebase SDK 與主邏輯 -->
     <script type="module">
-        import Alpine from 'https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/module.esm.js';
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, get, push, remove, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import Alpine from 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/module.esm.js';
 
-        // ==================== 音效引擎 (無外部依賴) ====================
+        /* 
+        ========================================================================
+        🌟🌟🌟🔥 Firebase 資料庫連線設定 (請填入您的金鑰) 🔥🌟🌟🌟
+        ========================================================================
+        */
+        const myFirebaseConfig = {
+           apiKey: "AIzaSyAiai_EXmE8kM4iyJxqf5azORkmzbB0xLY",
+  authDomain: "idiom-4f7c0.firebaseapp.com",
+  projectId: "idiom-4f7c0",
+  storageBucket: "idiom-4f7c0.firebasestorage.app",
+  messagingSenderId: "1078951444674",
+  appId: "1:1078951444674:web:e6fe94ac4dbba15ed37b5b"
+        };
+
+        // 音效引擎 (Web Audio API)
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function PlaySound(type) {
+        function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            const now = audioCtx.currentTime;
             
-            switch(type) {
-                case 'click':
-                    osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
-                    gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                    osc.start(now); osc.stop(now + 0.1); break;
-                case 'correct':
-                    osc.type = 'triangle'; osc.frequency.setValueAtTime(523.25, now); osc.frequency.setValueAtTime(659.25, now + 0.1); osc.frequency.setValueAtTime(783.99, now + 0.2);
-                    gain.gain.setValueAtTime(0.5, now); gain.gain.linearRampToValueAtTime(0, now + 0.5);
-                    osc.start(now); osc.stop(now + 0.5); break;
-                case 'wrong':
-                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
-                    gain.gain.setValueAtTime(0.5, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
-                    osc.start(now); osc.stop(now + 0.3); break;
-                case 'gameover':
-                    osc.type = 'square'; osc.frequency.setValueAtTime(300, now); osc.frequency.linearRampToValueAtTime(100, now + 0.8);
-                    gain.gain.setValueAtTime(0.4, now); gain.gain.linearRampToValueAtTime(0, now + 0.8);
-                    osc.start(now); osc.stop(now + 0.8); break;
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'click') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
             }
         }
 
         document.addEventListener('alpine:init', () => {
             Alpine.data('gameApp', () => ({
                 view: 'loading',
-                isOffline: false, // 離線模式旗標
+                isOffline: true,
                 db: null,
-                auth: null,
-                appId: typeof __app_id !== 'undefined' ? __app_id : 'idiom-game-default',
-                userId: null,
                 
-                idioms: [], 
-                leaderboard: [],
+                // 玩家資料
+                playerName: '',
+                score: 0,
+                wrongCount: 0,
                 
-                playerName: localStorage.getItem('idiom_player_name') || '',
-                selectedLesson: 'all',
+                // 遊戲狀態
+                hp: 3,
+                maxHp: 3,
+                timeLeft: 10,
+                maxTime: 10,
+                timer: null,
+                isChecking: false,
                 
-                game: {
-                    score: 0, health: 3, maxHealth: 3, correctCount: 0, wrongCount: 0, timer: 100, maxTimer: 100, timerInterval: null,
-                    currentIdiom: null, hiddenIndex: 0, displayChars: [], options: [], isProcessing: false, isShaking: false
-                },
-                
-                toast: { show: false, type: 'correct', title: '', message: '' },
-                
-                admin: {
-                    actualPassword: 'admin', // 預設密碼
-                    loginInput: '',
-                    newPasswordInput: '',
-                    formText: '', formLesson: '', editingId: null, selectedIds: [], filterLesson: 'all'
-                },
+                // 題目資料
+                idiomsList: [
+                    { id: '1', lesson: '第一課', word: '一馬當先' },
+                    { id: '2', lesson: '第一課', word: '兩全其美' },
+                    { id: '3', lesson: '第二課', word: '三心二意' },
+                    { id: '4', lesson: '第二課', word: '四面楚歌' },
+                    { id: '5', lesson: '第三課', word: '五顏六色' },
+                    { id: '6', lesson: '第三課', word: '七上八下' }
+                ],
+                currentIdiomsPool: [],
+                currentQuestionIndex: 0,
+                currentIdiom: '',
+                blankIndex: 0,
+                options: [],
+                correctAnswer: '',
+                showWrongAnswerPopup: false,
+                leaderboardData: [],
+
+                // 管理員設定
+                isAdminLoggedIn: false,
+                adminPasswordInput: '',
+                adminLoginError: false,
+                newLesson: '',
+                newIdiom: '',
 
                 async init() {
                     try {
-                                   
-                                            const dbSettings = {
-                           apiKey: "AIzaSyAiai_EXmE8kM4iyJxqf5azORkmzbB0xLY",
-  authDomain: "idiom-4f7c0.firebaseapp.com",
-  projectId: "idiom-4f7c0",
-  storageBucket: "idiom-4f7c0.firebasestorage.app",
-  messagingSenderId: "1078951444674",
-  appId: "1:1078951444674:web:e6fe94ac4dbba15ed37b5b"
-                        };
-
-                        // 判斷是否為有效金鑰 (防止無效金鑰報錯)
-                        let activeConfig = null;
-                        if (typeof __firebase_config !== 'undefined') {
-                            activeConfig = typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
-                        } 
-                        
-                        // 若無外部注入，且代碼中仍是"請填入..."，則判定為離線模式
-                        if (!activeConfig && dbSettings.apiKey.includes("填入")) {
-                            throw new Error("離線模式：未提供有效的 Firebase 金鑰。");
-                        } else if (!activeConfig) {
-                            activeConfig = dbSettings;
-                        }
-
-                        // 嘗試初始化 Firebase
-                        const app = initializeApp(activeConfig);
-                        this.auth = getAuth(app);
-                        this.db = getFirestore(app);
-
-                        const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                        if (initialToken) {
-                            await signInWithCustomToken(this.auth, initialToken);
-                        } else {
-                            await signInAnonymously(this.auth);
-                        }
-                        
-                        this.userId = this.auth.currentUser.uid;
-                        await this.fetchAdminSettings();
-                        await this.fetchIdioms();
-                        await this.fetchLeaderboard();
-                        
+                        const app = initializeApp(myFirebaseConfig);
+                        const auth = getAuth(app);
+                        await signInAnonymously(auth);
+                        this.db = getDatabase(app);
+                        this.isOffline = false;
+                        await this.loadData();
                     } catch (error) {
-                        console.warn(error.message);
+                        console.warn("Firebase 連線失敗，啟用單機測試模式", error);
                         this.isOffline = true;
-                        // 離線模式載入預設資料，供使用者體驗
-                        this.idioms = [
-                            { id: '1', text: '一石二鳥', lesson: '第一課' },
-                            { id: '2', text: '半途而廢', lesson: '第一課' },
-                            { id: '3', text: '守株待兔', lesson: '第二課' },
-                            { id: '4', text: '畫蛇添足', lesson: '第二課' },
-                            { id: '5', text: '掩耳盜鈴', lesson: '第三課' },
-                            { id: '6', text: '自相矛盾', lesson: '第三課' }
-                        ];
+                    } finally {
+                        // 確保不管成功或失敗，都會關閉載入畫面進入首頁
+                        this.view = 'home';
                     }
-                    
-                    // 短暫延遲讓玩家看見狀態
-                    setTimeout(() => { this.view = 'home'; }, 800);
                 },
 
-                // ==================== 資料庫/資料存取邏輯 ====================
-                async fetchAdminSettings() {
-                    if (this.isOffline || !this.db) return;
+                async loadData() {
+                    if (this.isOffline) return;
                     try {
-                        const adminDocRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'settings', 'adminConfig');
-                        const adminDoc = await getDoc(adminDocRef);
-                        if (adminDoc.exists()) {
-                            this.admin.actualPassword = adminDoc.data().password;
-                        } else {
-                            await setDoc(adminDocRef, { password: 'admin' });
+                        const idiomsSnapshot = await get(child(ref(this.db), 'idioms'));
+                        if (idiomsSnapshot.exists()) {
+                            let data = idiomsSnapshot.val();
+                            this.idiomsList = Object.keys(data).map(key => ({ id: key, ...data[key] }));
                         }
-                    } catch (e) {
-                        console.error("無法取得管理員設定:", e);
-                    }
+                        const lbSnapshot = await get(child(ref(this.db), 'leaderboard'));
+                        if (lbSnapshot.exists()) {
+                            let data = lbSnapshot.val();
+                            this.leaderboardData = Object.keys(data).map(key => data[key]).sort((a,b) => b.score - a.score).slice(0, 10);
+                        }
+                    } catch(e) { console.error(e); }
                 },
 
-                async fetchIdioms() {
-                    if (this.isOffline || !this.db) return;
-                    try {
-                        const idiomRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms');
-                        const snapshot = await getDocs(idiomRef);
-                        this.idioms = [];
-                        snapshot.forEach(doc => this.idioms.push({ id: doc.id, ...doc.data() }));
-                    } catch (e) { console.error("讀取題庫失敗", e); }
-                },
-
-                async fetchLeaderboard() {
-                    if (this.isOffline || !this.db) return;
-                    try {
-                        const scoreRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'scores');
-                        const snapshot = await getDocs(scoreRef);
-                        let scores = [];
-                        snapshot.forEach(doc => scores.push({ id: doc.id, ...doc.data() }));
-                        this.leaderboard = scores.sort((a, b) => b.score - a.score).slice(0, 50);
-                    } catch (e) { console.error("讀取排行榜失敗", e); }
-                },
-
-                async saveScore() {
-                    if (this.isOffline || !this.db) return;
-                    try {
-                        const scoreRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'scores');
-                        await addDoc(scoreRef, {
-                            name: this.playerName, score: this.game.score, correct: this.game.correctCount, wrong: this.game.wrongCount, timestamp: Date.now()
-                        });
-                        await this.fetchLeaderboard();
-                    } catch (e) { console.error("儲存分數失敗", e); }
-                },
-
-                // ==================== 管理員登入與修改密碼 ====================
-                openAdminLogin() {
-                    PlaySound('click');
-                    this.admin.loginInput = '';
-                    this.view = 'admin_login';
-                },
-
-                verifyAdminLogin() {
-                    PlaySound('click');
-                    if (this.admin.loginInput === this.admin.actualPassword) {
-                        this.admin.loginInput = '';
-                        this.view = 'admin';
-                    } else {
-                        this.showToast('error', '登入失敗', '密碼不正確！');
-                    }
-                },
-
-                async changeAdminPassword() {
-                    if (!this.admin.newPasswordInput.trim()) {
-                        this.showToast('error', '錯誤', '新密碼不能為空');
+                startGame() {
+                    playSound('click');
+                    if (!this.playerName.trim()) {
+                        alert("請先輸入您的姓名喔！");
                         return;
                     }
-                    PlaySound('click');
-                    const newPw = this.admin.newPasswordInput.trim();
-                    this.admin.actualPassword = newPw;
-                    
-                    if (!this.isOffline && this.db) {
-                        try {
-                            const adminDocRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'settings', 'adminConfig');
-                            await setDoc(adminDocRef, { password: newPw });
-                            this.showToast('correct', '成功', '管理員密碼已更新並儲存至資料庫！');
-                        } catch (e) {
-                            console.error("更新密碼失敗", e);
-                            this.showToast('error', '錯誤', '無法更新到資料庫');
-                        }
-                    } else {
-                        this.showToast('correct', '成功', '管理員密碼已更新 (單機暫存模式)！');
+                    if (this.idiomsList.length === 0) {
+                        alert("目前題庫沒有成語，請請管理員新增！");
+                        return;
                     }
-                    this.admin.newPasswordInput = '';
-                },
-
-                // ==================== 遊戲邏輯 ====================
-                startGame() {
-                    PlaySound('click');
-                    if(!this.playerName.trim()) return;
-                    localStorage.setItem('idiom_player_name', this.playerName.trim());
-                    
-                    this.game.score = 0; this.game.health = this.game.maxHealth;
-                    this.game.correctCount = 0; this.game.wrongCount = 0;
-                    this.view = 'playing';
+                    this.score = 0;
+                    this.wrongCount = 0;
+                    this.hp = this.maxHp;
+                    this.currentQuestionIndex = 0;
+                    // 複製題庫並洗牌
+                    this.currentIdiomsPool = [...this.idiomsList].sort(() => 0.5 - Math.random());
+                    this.view = 'game';
                     this.nextQuestion();
                 },
 
                 nextQuestion() {
-                    this.game.isProcessing = false; this.game.isShaking = false;
-                    let pool = this.selectedLesson !== 'all' ? this.idioms.filter(i => i.lesson === this.selectedLesson) : this.idioms;
-                    if (pool.length === 0) pool = this.idioms; 
-                    if (pool.length === 0) return this.endGame();
-
-                    const randIndex = Math.floor(Math.random() * pool.length);
-                    this.game.currentIdiom = pool[randIndex];
-                    const idiomText = this.game.currentIdiom.text;
-                    this.game.hiddenIndex = Math.floor(Math.random() * 4);
-                    const correctChar = idiomText[this.game.hiddenIndex];
-                    
-                    this.game.displayChars = idiomText.split('');
-                    this.game.displayChars[this.game.hiddenIndex] = '?';
-                    this.game.options = this.generateDistractors(correctChar);
-                    this.game.timer = this.game.maxTimer;
-                    this.startTimer();
-                },
-
-                generateDistractors(correctChar) {
-                    let chars = new Set([correctChar]);
-                    const fallbackChars = this.idioms.map(i => i.text).join('') + "天地玄黃宇宙洪荒日月盈昃辰宿列張寒來暑往秋收冬藏金生麗水玉出崑岡劍號巨闕珠稱夜光果珍李柰菜重芥薑海鹹河淡鱗潛羽翔";
-                    while (chars.size < 4) {
-                        const randChar = fallbackChars[Math.floor(Math.random() * fallbackChars.length)];
-                        if (randChar.trim() && randChar !== correctChar) chars.add(randChar);
+                    if (this.hp <= 0 || this.currentQuestionIndex >= this.currentIdiomsPool.length) {
+                        this.endGame();
+                        return;
                     }
-                    return Array.from(chars).sort(() => Math.random() - 0.5);
-                },
 
-                startTimer() {
-                    clearInterval(this.game.timerInterval);
-                    const tickRate = 100; const totalTime = 10000; 
-                    const decrement = (100 / (totalTime / tickRate));
-                    this.game.timerInterval = setInterval(() => {
-                        if (this.view !== 'playing' || this.game.isProcessing) return;
-                        this.game.timer -= decrement;
-                        if (this.game.timer <= 0) {
-                            this.game.timer = 0;
-                            this.handleWrong("時間到！");
-                        }
-                    }, tickRate);
-                },
+                    this.isChecking = false;
+                    const idiomObj = this.currentIdiomsPool[this.currentQuestionIndex];
+                    this.currentIdiom = idiomObj.word;
+                    this.blankIndex = Math.floor(Math.random() * 4);
+                    const correctChar = this.currentIdiom[this.blankIndex];
+                    this.correctAnswer = this.currentIdiom;
 
-                submitAnswer(option) {
-                    if (this.game.isProcessing) return;
-                    this.game.isProcessing = true;
-                    clearInterval(this.game.timerInterval);
+                    // 產生混淆選項 (隨機取常見中文字)
+                    const poolStr = "天地玄黃宇宙洪荒日月盈昃辰宿列張寒來暑往秋收冬藏";
+                    let opts = [correctChar];
+                    while(opts.length < 4) {
+                        let randChar = poolStr[Math.floor(Math.random() * poolStr.length)];
+                        if (!opts.includes(randChar)) opts.push(randChar);
+                    }
+                    this.options = opts.sort(() => 0.5 - Math.random());
                     
-                    const correctChar = this.game.currentIdiom.text[this.game.hiddenIndex];
-                    if (option === correctChar) {
-                        PlaySound('correct');
-                        this.game.score += 10 + Math.floor(this.game.timer / 10);
-                        this.game.correctCount++;
-                        this.game.displayChars[this.game.hiddenIndex] = correctChar;
-                        this.showToast('correct', '答對了！', '太棒了，繼續保持！');
-                        setTimeout(() => this.nextQuestion(), 1000);
+                    this.timeLeft = this.maxTime;
+                    clearInterval(this.timer);
+                    this.timer = setInterval(() => {
+                        this.timeLeft -= 0.1;
+                        if (this.timeLeft <= 0) {
+                            clearInterval(this.timer);
+                            this.handleWrong();
+                        }
+                    }, 100);
+                },
+
+                checkAnswer(ans) {
+                    if (this.isChecking) return;
+                    this.isChecking = true;
+                    clearInterval(this.timer);
+                    
+                    if (ans === this.currentIdiom[this.blankIndex]) {
+                        playSound('correct');
+                        this.score++;
+                        setTimeout(() => {
+                            this.currentQuestionIndex++;
+                            this.nextQuestion();
+                        }, 500);
                     } else {
-                        this.handleWrong("答錯了！");
+                        this.handleWrong();
                     }
                 },
 
-                handleWrong(title) {
-                    PlaySound('wrong');
-                    this.game.isShaking = true; this.game.isProcessing = true;
-                    clearInterval(this.game.timerInterval);
-                    
-                    this.game.health--; this.game.wrongCount++;
-                    this.game.displayChars[this.game.hiddenIndex] = this.game.currentIdiom.text[this.game.hiddenIndex];
-                    this.showToast('error', title, `正確答案是：「${this.game.currentIdiom.text}」`);
-                    
+                handleWrong() {
+                    playSound('wrong');
+                    this.wrongCount++;
+                    this.hp--;
+                    this.showWrongAnswerPopup = true;
                     setTimeout(() => {
-                        if (this.game.health <= 0) this.endGame();
-                        else this.nextQuestion();
-                    }, 2000); 
+                        this.showWrongAnswerPopup = false;
+                        this.currentQuestionIndex++;
+                        this.nextQuestion();
+                    }, 2000);
                 },
 
-                endGame() {
-                    PlaySound('gameover');
-                    clearInterval(this.game.timerInterval);
-                    this.saveScore(); 
+                async endGame() {
+                    clearInterval(this.timer);
                     this.view = 'result';
-                },
-
-                showToast(type, title, message) {
-                    this.toast = { show: true, type, title, message };
-                    setTimeout(() => { this.toast.show = false; }, type === 'correct' ? 1000 : 2000);
-                },
-
-                // ==================== 管理員題庫邏輯 ====================
-                async saveIdiom() {
-                    PlaySound('click');
-                    const text = this.admin.formText.trim(); const lesson = this.admin.formLesson.trim();
-                    if (text.length !== 4 || !lesson) return;
-
-                    if (this.isOffline) {
-                        // 單機模式邏輯
-                        if (this.admin.editingId) {
-                            const idx = this.idioms.findIndex(i => i.id === this.admin.editingId);
-                            if(idx !== -1) { this.idioms[idx].text = text; this.idioms[idx].lesson = lesson; }
-                        } else {
-                            this.idioms.push({ id: 'local_' + Date.now(), text, lesson });
-                        }
-                    } else if (this.db) {
-                        // 資料庫模式邏輯
-                        const idiomRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms');
-                        try {
-                            if (this.admin.editingId) {
-                                await updateDoc(doc(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms', this.admin.editingId), { text, lesson });
-                            } else {
-                                await addDoc(idiomRef, { text, lesson, createdAt: Date.now() });
-                            }
-                            await this.fetchIdioms();
-                        } catch (e) { console.error("儲存失敗:", e); }
+                    if (!this.isOffline && this.score > 0) {
+                        push(ref(this.db, 'leaderboard'), {
+                            name: this.playerName,
+                            score: this.score,
+                            timestamp: Date.now()
+                        });
+                        await this.loadData();
+                    } else if (this.isOffline && this.score > 0) {
+                        this.leaderboardData.push({ name: this.playerName, score: this.score });
+                        this.leaderboardData.sort((a,b) => b.score - a.score);
                     }
-                    this.cancelEdit();
                 },
 
-                editIdiom(item) {
-                    PlaySound('click');
-                    this.admin.formText = item.text; this.admin.formLesson = item.lesson; this.admin.editingId = item.id;
+                enterAdmin() {
+                    playSound('click');
+                    this.adminPasswordInput = '';
+                    this.adminLoginError = false;
+                    this.view = 'admin';
                 },
 
-                cancelEdit() {
-                    PlaySound('click');
-                    this.admin.formText = ''; this.admin.formLesson = ''; this.admin.editingId = null;
+                loginAdmin() {
+                    playSound('click');
+                    if (this.adminPasswordInput === 'admin') {
+                        this.isAdminLoggedIn = true;
+                        this.adminLoginError = false;
+                    } else {
+                        this.adminLoginError = true;
+                    }
+                },
+
+                async addIdiom() {
+                    if (this.newLesson.trim() && this.newIdiom.trim().length === 4) {
+                        const newItem = { lesson: this.newLesson, word: this.newIdiom };
+                        if (!this.isOffline) {
+                            const newRef = push(ref(this.db, 'idioms'));
+                            await set(newRef, newItem);
+                            await this.loadData();
+                        } else {
+                            this.idiomsList.push({ id: Date.now().toString(), ...newItem });
+                        }
+                        this.newIdiom = '';
+                    } else {
+                        alert("請確保輸入課別，且成語必須為四個字！");
+                    }
                 },
 
                 async deleteIdiom(id) {
-                    PlaySound('click');
-                    if (this.isOffline) {
-                        this.idioms = this.idioms.filter(i => i.id !== id);
-                        this.admin.selectedIds = this.admin.selectedIds.filter(selId => selId !== id);
-                    } else if (this.db) {
-                        try {
-                            await deleteDoc(doc(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms', id));
-                            await this.fetchIdioms();
-                            this.admin.selectedIds = this.admin.selectedIds.filter(selId => selId !== id);
-                        } catch (e) { console.error("刪除失敗:", e); }
+                    if (confirm('確定要刪除這個成語嗎？')) {
+                        if (!this.isOffline) {
+                            await remove(ref(this.db, `idioms/${id}`));
+                            await this.loadData();
+                        } else {
+                            this.idiomsList = this.idiomsList.filter(item => item.id !== id);
+                        }
                     }
-                },
-
-                async batchDelete() {
-                    if (this.admin.selectedIds.length === 0) return;
-                    PlaySound('click');
-                    if (this.isOffline) {
-                        this.idioms = this.idioms.filter(i => !this.admin.selectedIds.includes(i.id));
-                        this.admin.selectedIds = [];
-                    } else if (this.db) {
-                        try {
-                            for (const id of this.admin.selectedIds) {
-                                await deleteDoc(doc(this.db, 'artifacts', this.appId, 'public', 'data', 'idioms', id));
-                            }
-                            this.admin.selectedIds = [];
-                            await this.fetchIdioms();
-                        } catch (e) { console.error("批次刪除失敗:", e); }
-                    }
-                },
-
-                // ==================== 屬性計算 ====================
-                get availableLessons() {
-                    return Array.from(new Set(this.idioms.map(i => i.lesson))).sort();
-                },
-
-                get filteredIdioms() {
-                    return this.admin.filterLesson === 'all' ? this.idioms : this.idioms.filter(i => i.lesson === this.admin.filterLesson);
-                },
-
-                get timeColorClass() {
-                    if (this.game.timer > 60) return 'bg-gradient-to-r from-blue-400 to-green-400';
-                    if (this.game.timer > 30) return 'bg-gradient-to-r from-yellow-400 to-orange-400';
-                    return 'bg-gradient-to-r from-red-500 to-red-700 animate-pulse';
-                },
-
-                formatDate(timestamp) {
-                    if (!timestamp) return '';
-                    const d = new Date(timestamp);
-                    return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
                 }
             }));
         });
+        Alpine.start();
     </script>
 </body>
 </html>
