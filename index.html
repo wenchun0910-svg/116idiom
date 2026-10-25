@@ -785,7 +785,7 @@
                 <i class="fa-solid fa-key"></i>
             </div>
             <h3 class="text-xl sm:text-2xl font-black text-center text-amber-400 mb-1">管理後台登入</h3>
-            <p class="text-xs sm:text-sm text-center text-slate-400 mb-5">請輸入教師管理後台密碼（預設密碼：<span class="text-amber-300 font-mono font-bold">1234</span>）</p>
+            <p class="text-xs sm:text-sm text-center text-slate-400 mb-5">請輸入教師管理後台密碼</p>
 
             <div class="mb-5">
                 <label class="block text-xs font-bold text-slate-300 mb-2">管理員密碼</label>
@@ -981,7 +981,7 @@
             questionsPerRound: 10,
             timeLimit: 15,
             maxLives: 3,
-            adminPassword: "1234"
+            adminPassword: "Chun6680"
         };
         let isAdminAuthenticated = false;
 
@@ -1241,7 +1241,7 @@
                         questionsPerRound: Number(data.questionsPerRound) || 10,
                         timeLimit: Number(data.timeLimit) || 15,
                         maxLives: Number(data.maxLives) || 3,
-                        adminPassword: data.adminPassword ? String(data.adminPassword) : "1234"
+                        adminPassword: data.adminPassword ? String(data.adminPassword) : "Chun6680"
                     };
                 }
                 updateAllUI();
@@ -1439,7 +1439,7 @@
             const input = document.getElementById('admin-login-password-input');
             const err = document.getElementById('admin-login-error');
             const entered = (input.value || '').trim();
-            const currentPwd = String(gameSettings.adminPassword || '1234');
+            const currentPwd = String(gameSettings.adminPassword || 'Chun6680');
 
             if (entered === currentPwd) {
                 playSound('correct');
