@@ -1485,7 +1485,7 @@
             const oldPwd = (document.getElementById('old-password-input').value || '').trim();
             const newPwd = (document.getElementById('new-password-input').value || '').trim();
             const confirmPwd = (document.getElementById('confirm-new-password-input').value || '').trim();
-            const currentPwd = String(gameSettings.adminPassword || '1234');
+            const currentPwd = String(gameSettings.adminPassword || 'Chun6680');
 
             if (oldPwd !== currentPwd) {
                 playSound('wrong');
