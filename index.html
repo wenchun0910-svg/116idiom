@@ -545,14 +545,14 @@
                         <div class="lg:col-span-7 p-5 rounded-2xl bg-navy-950/90 border border-amber-500/30">
                             <div class="flex items-center justify-between mb-3">
                                 <h3 class="font-bold text-amber-400 text-base flex items-center gap-2">
-                                    <i class="fa-solid fa-file-import text-emerald-400"></i> Excel 匯入每一課成語 (附圖一格式)
+                                    <i class="fa-solid fa-file-import text-emerald-400"></i> Excel 匯入每一課成語
                                 </h3>
                                 <button onclick="window.downloadSampleExcel()" class="text-xs px-3 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 font-bold transition flex items-center gap-1">
                                     <i class="fa-solid fa-download"></i> 下載範例 Excel
                                 </button>
                             </div>
                             <p class="text-xs text-slate-400 mb-4 leading-relaxed">
-                                請準備 Excel 檔（<code class="text-amber-300">.xlsx</code>, <code class="text-amber-300">.xls</code> 或 <code class="text-amber-300">.csv</code>），第一列標題為 <strong>A欄：成語</strong>、<strong>B欄：解釋</strong>（如附圖一）。系統會自動讀取並匯入至您指定的課次。
+                                請準備 Excel 檔（<code class="text-amber-300">.xlsx</code>, <code class="text-amber-300">.xls</code> 或 <code class="text-amber-300">.csv</code>），第一列標題為 <strong>A欄：成語</strong>、<strong>B欄：解釋</strong>。系統會自動讀取並匯入至您指定的課次。
                             </p>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
@@ -668,7 +668,7 @@
                         <!-- 是否強制鎖定指定課次 -->
                         <div class="flex items-center justify-between p-4 rounded-xl bg-slate-900/80 border border-slate-800">
                             <div>
-                                <span class="font-bold text-sm text-white block">強制鎖定此課次 (如附圖二顯示「強制指定」)</span>
+                                <span class="font-bold text-sm text-white block">強制鎖定此課次</span>
                                 <span class="text-xs text-slate-400">開啟後學生不可自行切換其他課次；關閉則允許學生下拉選擇課次。</span>
                             </div>
                             <input type="checkbox" id="setting-lock-lesson" checked class="w-6 h-6 accent-amber-500 rounded cursor-pointer">
@@ -2064,7 +2064,7 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "成語題庫");
             XLSX.writeFile(wb, "成語填填看_匯入範例格式.xlsx");
-            showToast("已下載附圖一格式範例 Excel 檔！", "success");
+            showToast("下載格式範例 Excel 檔！", "success");
         };
 
         window.handleExcelImport = function () {
