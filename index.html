@@ -161,7 +161,7 @@
         <!-- 指定課次膠囊標籤 -->
         <div class="hidden sm:flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#13385E] border border-[#C59B27]/70 text-xs font-bold text-[#FDE68A] shadow-inner">
           <span>📌 指定課次：</span>
-          <span id="nav-active-lesson">第一課 雅量</span>
+          <span id="nav-active-lesson">載入中...</span>
         </div>
       </div>
 
@@ -191,7 +191,7 @@
   <!-- ==================== 主內容區 ==================== -->
   <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6 sm:py-10 flex flex-col items-center justify-center">
 
-    <!-- 1. 遊戲啟動畫面 (附圖二風格 + 青花瓷中國風) -->
+    <!-- 1. 遊戲啟動畫面 -->
     <section id="view-home" class="w-full max-w-lg">
       <div class="porcelain-frame rounded-2xl p-6 sm:p-8">
         <div class="porcelain-corner corner-tl"></div>
@@ -232,12 +232,12 @@
         <div class="mb-4">
           <div class="flex items-center justify-between text-xs font-bold mb-1.5">
             <span class="text-[#0F2C59]">📖 選擇挑戰課次</span>
-            <span class="text-[#8C6D1F]">（管理者已指定）</span>
+            <span class="text-[#8C6D1F]">（雲端即時同步）</span>
           </div>
           <div class="px-4 py-3.5 rounded-xl bg-gradient-to-r from-[#0F2C59] to-[#1E4E8C] border-2 border-[#C59B27] text-white flex items-center justify-between shadow-md">
             <div class="flex items-center gap-2 font-black text-base sm:text-lg tracking-wide text-[#F8FAFC]">
               <span>📌</span>
-              <span id="home-active-lesson">第一課 雅量</span>
+              <span id="home-active-lesson">載入中...</span>
             </div>
             <span class="px-2.5 py-0.5 rounded bg-[#C59B27] text-[#0A2239] text-xs font-black">
               強制指定
@@ -248,7 +248,7 @@
         <!-- 本課可用成語題庫數 -->
         <div class="mb-6 px-4 py-2.5 rounded-xl bg-[#E6F1FA] border border-[#1E4E8C]/30 flex items-center justify-between text-sm">
           <span class="font-bold text-[#0F2C59]">📚 本課可用成語題庫：</span>
-          <span id="home-lesson-count" class="font-black text-[#1E4E8C] text-base">16 題</span>
+          <span id="home-lesson-count" class="font-black text-[#1E4E8C] text-base">0 題</span>
         </div>
 
         <!-- 挑戰規則說明 -->
@@ -273,7 +273,7 @@
       </div>
     </section>
 
-    <!-- 2. 遊戲作答畫面 (獨立雙血條 + 青花米字格 + 4 選 1 字牌) -->
+    <!-- 2. 遊戲作答畫面 -->
     <section id="view-game" class="w-full max-w-2xl hidden">
       <div class="porcelain-frame rounded-2xl p-5 sm:p-8">
         <div class="porcelain-corner corner-tl"></div>
@@ -284,7 +284,7 @@
         <!-- 頂部挑戰者與課次資訊列 -->
         <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b border-[#1E4E8C]/20">
           <div class="flex items-center gap-2">
-            <span class="px-3 py-1 rounded-lg bg-[#0F2C59] text-[#FDE68A] text-xs font-bold" id="game-lesson-badge">第一課 雅量</span>
+            <span class="px-3 py-1 rounded-lg bg-[#0F2C59] text-[#FDE68A] text-xs font-bold" id="game-lesson-badge">課次</span>
             <span class="text-sm font-bold text-[#0F2C59]">挑戰者：<strong id="game-player-name" class="text-[#1E4E8C]">選手</strong></span>
           </div>
           <div class="flex items-center gap-4">
@@ -297,7 +297,7 @@
           </div>
         </div>
 
-        <!-- 雙血條區：左「答題進度與生命值血條」、右「倒數時間血條」明確區分 -->
+        <!-- 雙血條區 -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <!-- 血條一：生命值與答題進度血條 -->
           <div class="p-3.5 rounded-xl bg-[#F2F8FD] border border-[#1E4E8C]/30 shadow-inner">
@@ -305,11 +305,9 @@
               <span class="flex items-center gap-1">❤️ 生命值血條：<span id="game-hearts-text" class="text-sm">❤️❤️❤️</span></span>
               <span>進度：<strong id="game-progress-text" class="text-[#1E4E8C]">1 / 10</strong></span>
             </div>
-            <!-- 生命值視覺血條 -->
             <div class="w-full h-3 rounded-full bg-slate-200 overflow-hidden border border-slate-300 mb-2">
               <div id="hp-bar-fill" class="h-full bg-gradient-to-r from-[#9E2A2B] to-[#E11D48] transition-all duration-300" style="width: 100%;"></div>
             </div>
-            <!-- 題目推進進度條 -->
             <div class="w-full h-2 rounded-full bg-sky-100 overflow-hidden">
               <div id="progress-bar-fill" class="h-full bg-[#1E4E8C] transition-all duration-300" style="width: 10%;"></div>
             </div>
@@ -332,22 +330,18 @@
         <div class="mb-6 p-4 rounded-xl bg-gradient-to-r from-[#E6F1FA] via-[#F4F9FD] to-[#E6F1FA] border-l-4 border-r-4 border-[#0F2C59] text-center shadow-sm">
           <div class="text-xs font-bold text-[#1E4E8C] tracking-widest mb-1">【 成 語 釋 義 提 示 】</div>
           <p id="game-idiom-meaning" class="text-base sm:text-lg font-bold text-[#0A2239] leading-relaxed">
-            形容人的肚量寬宏，能夠容納他人的意見。
+            載入中...
           </p>
         </div>
 
         <!-- 四字成語米字格填空區 -->
-        <div id="game-idiom-boxes" class="grid grid-cols-4 gap-3 sm:gap-5 max-w-md mx-auto mb-8">
-          <!-- 由 JS 動態生成 4 個米字格 -->
-        </div>
+        <div id="game-idiom-boxes" class="grid grid-cols-4 gap-3 sm:gap-5 max-w-md mx-auto mb-8"></div>
 
         <!-- 4 個候選字選擇區 -->
         <div class="text-center text-xs font-bold text-[#1E4E8C] tracking-widest mb-3">
           ▼ 請點擊下方正確的青花字牌填入缺字 ▼
         </div>
-        <div id="game-options-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-lg mx-auto">
-          <!-- 由 JS 動態生成 4 個候選字按鈕 -->
-        </div>
+        <div id="game-options-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-lg mx-auto"></div>
       </div>
     </section>
 
@@ -364,10 +358,10 @@
             挑戰成績結算
           </span>
           <h2 id="result-title" class="text-3xl font-black text-[#0F2C59] mt-2">金榜題名！</h2>
-          <p id="result-subtitle" class="text-sm text-[#1E4E8C] mt-1">挑戰課次：第一課 雅量</p>
+          <p id="result-subtitle" class="text-sm text-[#1E4E8C] mt-1"></p>
         </div>
 
-        <!-- 成績統計四宮格 (含答對題數、答錯題數、總分、排名) -->
+        <!-- 成績統計四宮格 -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <div class="p-3.5 rounded-xl bg-[#F2F8FD] border border-[#1E4E8C]/30 text-center">
             <div class="text-xs font-bold text-slate-600">總得分</div>
@@ -390,9 +384,7 @@
         <!-- 本次作答明細回顧 -->
         <div class="mb-6">
           <h3 class="text-sm font-black text-[#0F2C59] mb-2">📜 本次挑戰成語回顧：</h3>
-          <div id="result-history-list" class="max-h-52 overflow-y-auto rounded-xl border border-[#1E4E8C]/25 bg-white divide-y divide-slate-100 p-2 text-xs sm:text-sm">
-            <!-- JS 動態生成 -->
-          </div>
+          <div id="result-history-list" class="max-h-52 overflow-y-auto rounded-xl border border-[#1E4E8C]/25 bg-white divide-y divide-slate-100 p-2 text-xs sm:text-sm"></div>
         </div>
 
         <!-- 操作按鈕 -->
@@ -410,7 +402,7 @@
       </div>
     </section>
 
-    <!-- 4. 管理後台畫面 (Excel 匯入、題庫修改/批次刪除、課次指定、成績查詢、修改密碼) -->
+    <!-- 4. 管理後台畫面 -->
     <section id="view-admin" class="w-full hidden">
       <div class="porcelain-frame rounded-2xl p-5 sm:p-8">
         <div class="porcelain-corner corner-tl"></div>
@@ -426,7 +418,7 @@
               <span>成語題庫與成績管理後台</span>
             </h2>
             <p id="admin-storage-status" class="text-xs text-[#1E4E8C] font-semibold mt-1">
-              💾 資料儲存狀態：本機永久快取與雲端資料庫雙重同步中
+              ☁️ 資料儲存狀態：連線至 Firebase 雲端資料庫中...
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -473,7 +465,7 @@
             </div>
           </div>
 
-          <!-- Excel 匯入區 (對應附圖一：A欄成語、B欄解釋) -->
+          <!-- Excel 匯入區 -->
           <div class="lg:col-span-2 p-5 rounded-xl bg-[#F4F9FD] border border-[#1E4E8C]/30">
             <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
               <h3 class="text-base font-black text-[#0F2C59] flex items-center gap-1.5">
@@ -491,7 +483,7 @@
                 <input
                   id="excel-lesson-input"
                   type="text"
-                  placeholder="例如：第二課 下雨天，真好"
+                  placeholder="例如：第一課 雅量"
                   class="w-full px-3 py-2 rounded-lg bg-white border border-[#1E4E8C]/40 text-sm font-bold"
                 />
               </div>
@@ -509,7 +501,7 @@
 
             <label class="inline-flex items-center gap-2 text-xs font-bold text-[#1E4E8C] cursor-pointer">
               <input id="excel-auto-activate" type="checkbox" checked class="rounded text-[#0F2C59]" />
-              <span>匯入完成後，自動將此課次設為「目前指定挑戰課次」並永久保存</span>
+              <span>匯入完成後，自動將此課次設為「目前指定挑戰課次」並同步至 Firebase</span>
             </label>
           </div>
         </div>
@@ -522,7 +514,7 @@
               <select id="admin-filter-lesson" onchange="window.renderAdminIdiomsTable()" class="px-3 py-1.5 rounded-lg bg-white border border-[#1E4E8C]/40 text-xs sm:text-sm font-bold text-[#0F2C59]">
                 <option value="ALL">顯示全部課次</option>
               </select>
-              <span id="admin-idiom-count-badge" class="px-2.5 py-1 rounded-full bg-[#E6F1FA] text-[#0F2C59] text-xs font-bold">共 16 筆</span>
+              <span id="admin-idiom-count-badge" class="px-2.5 py-1 rounded-full bg-[#E6F1FA] text-[#0F2C59] text-xs font-bold">共 0 筆</span>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
@@ -551,9 +543,7 @@
                   <th class="p-3 w-28 text-center">操作</th>
                 </tr>
               </thead>
-              <tbody id="admin-idioms-tbody" class="divide-y divide-slate-200">
-                <!-- JS 動態渲染 -->
-              </tbody>
+              <tbody id="admin-idioms-tbody" class="divide-y divide-slate-200"></tbody>
             </table>
           </div>
         </div>
@@ -598,9 +588,7 @@
                   <th class="p-3 w-20 text-center">刪除</th>
                 </tr>
               </thead>
-              <tbody id="admin-scores-tbody" class="divide-y divide-slate-200">
-                <!-- JS 動態渲染 -->
-              </tbody>
+              <tbody id="admin-scores-tbody" class="divide-y divide-slate-200"></tbody>
             </table>
           </div>
         </div>
@@ -611,7 +599,7 @@
 
   <!-- ==================== 彈出視窗群 (Modals) ==================== -->
 
-  <!-- 1. 答錯/超時 顯示正確答案彈出視窗（短暫停留後自動關閉並進入下一題） -->
+  <!-- 1. 答錯/超時 顯示正確答案彈出視窗 -->
   <div id="modal-wrong-answer" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="porcelain-frame rounded-2xl max-w-md w-full p-6 text-center animate-shake">
       <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-rose-100 border-2 border-[#9E2A2B] flex items-center justify-center text-2xl">
@@ -622,13 +610,10 @@
 
       <div class="p-4 rounded-xl bg-[#F4F9FD] border-2 border-[#0F2C59] mb-4">
         <div class="text-xs text-[#1E4E8C] font-bold mb-1">【 正 確 成 語 】</div>
-        <div id="wrong-modal-idiom" class="text-3xl font-black tracking-widest text-[#0F2C59] mb-2">雅量高致</div>
-        <div id="wrong-modal-meaning" class="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed">
-          形容人的氣度寬宏，情致高雅。
-        </div>
+        <div id="wrong-modal-idiom" class="text-3xl font-black tracking-widest text-[#0F2C59] mb-2"></div>
+        <div id="wrong-modal-meaning" class="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed"></div>
       </div>
 
-      <!-- 自動關閉倒數進度條 -->
       <div class="w-full h-2 rounded-full bg-slate-200 overflow-hidden mb-2">
         <div id="wrong-modal-bar" class="h-full bg-[#0F2C59] transition-all duration-100" style="width: 100%;"></div>
       </div>
@@ -653,9 +638,7 @@
         </select>
       </div>
 
-      <div id="leaderboard-list-container" class="flex-1 overflow-y-auto space-y-2 pr-1">
-        <!-- JS 動態渲染 -->
-      </div>
+      <div id="leaderboard-list-container" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
     </div>
   </div>
 
@@ -670,7 +653,7 @@
         <button onclick="window.closeAdminLoginModal()" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black">✕</button>
       </div>
 
-      <p class="text-xs text-slate-600 mb-3">請輸入管理員密碼以進入題庫與成績管理後台（預設密碼：<code class="font-bold text-[#0F2C59]">1234</code>）：</p>
+      <p class="text-xs text-slate-600 mb-3">請輸入管理員密碼以進入題庫與成績管理後台（若雲端尚未設定，初始密碼為 <code class="font-bold text-[#0F2C59]">1234</code>）：</p>
 
       <div class="relative mb-4">
         <input
@@ -760,7 +743,7 @@
   <!-- 頂部輕量通知 Toast -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
 
-  <!-- ==================== 核心程式邏輯 (內建 Firebase 設定 + 本機雙重永久保存) ==================== -->
+  <!-- ==================== 核心程式邏輯 (100% 純 Firebase 雲端資料庫) ==================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import {
@@ -776,10 +759,10 @@
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // =========================================================================
-    // 1. 直接在程式碼內設定 Firebase Config（若環境未注入則使用此設定）
+    // 1. Firebase 專案連線設定（若環境未自動注入 __firebase_config，請在此填入您的設定）
     // =========================================================================
-    const HARDCODED_FIREBASE_CONFIG = {
-      apiKey: "AIzaSyAiai_EXmE8kM4iyJxqf5azORkmzbB0xLY",
+    const FIREBASE_CONFIG = {
+apiKey: "AIzaSyAiai_EXmE8kM4iyJxqf5azORkmzbB0xLY",
   authDomain: "idiom-4f7c0.firebaseapp.com",
   projectId: "idiom-4f7c0",
   storageBucket: "idiom-4f7c0.firebasestorage.app",
@@ -788,34 +771,8 @@
 
     };
 
-    const LOCAL_KEYS = {
-      IDIOMS: "PORCELAIN_IDIOM_LIST_V3",
-      SETTINGS: "PORCELAIN_IDIOM_SETTINGS_V3",
-      SCORES: "PORCELAIN_IDIOM_SCORES_V3"
-    };
-
-    // 預設「第一課 雅量」16 題成語題庫（對應附圖二）
-    const DEFAULT_IDIOMS = [
-      { id: "id_1", lesson: "第一課 雅量", idiom: "雅量高致", meaning: "形容人的氣度寬宏，情致高雅。" },
-      { id: "id_2", lesson: "第一課 雅量", idiom: "寬宏大量", meaning: "形容人度量大，心胸開闊，能容忍別人。" },
-      { id: "id_3", lesson: "第一課 雅量", idiom: "見仁見智", meaning: "對同一個問題，各人觀察的角度不同，見解也不同。" },
-      { id: "id_4", lesson: "第一課 雅量", idiom: "設身處地", meaning: "替別人著想，處在別人的地位或境遇去體會。" },
-      { id: "id_5", lesson: "第一課 雅量", idiom: "將心比心", meaning: "拿自己的心去比擬別人的心，指設身處地替別人著想。" },
-      { id: "id_6", lesson: "第一課 雅量", idiom: "休戚與共", meaning: "彼此共同承受幸福與災禍，形容利害關係密切。" },
-      { id: "id_7", lesson: "第一課 雅量", idiom: "大公無私", meaning: "處事公正，沒有絲毫私心。" },
-      { id: "id_8", lesson: "第一課 雅量", idiom: "平心靜氣", meaning: "心情平和，態度冷靜。" },
-      { id: "id_9", lesson: "第一課 雅量", idiom: "豁達大度", meaning: "心胸開闊，氣量大，能容人。" },
-      { id: "id_10", lesson: "第一課 雅量", idiom: "海納百川", meaning: "比喻心胸寬廣，能容納各種不同的意見與人才。" },
-      { id: "id_11", lesson: "第一課 雅量", idiom: "從善如流", meaning: "形容樂意接受別人的好意見，像水順流而下一樣自然。" },
-      { id: "id_12", lesson: "第一課 雅量", idiom: "推己及人", meaning: "用自己的心思去推想別人的心思，設身處地替人著想。" },
-      { id: "id_13", lesson: "第一課 雅量", idiom: "披星戴月", meaning: "身披星光，頭頂月色。形容早出晚歸，旅途或工作辛勞。" },
-      { id: "id_14", lesson: "第一課 雅量", idiom: "眾口鑠金", meaning: "眾人異口同聲的言論，足以熔化金屬。比喻輿論力量強大。" },
-      { id: "id_15", lesson: "第一課 雅量", idiom: "光風霽月", meaning: "雨過天晴時的明淨景象。比喻人品光明磊落，胸懷坦蕩。" },
-      { id: "id_16", lesson: "第一課 雅量", idiom: "虛懷若谷", meaning: "胸懷像山谷一樣深廣。形容為人十分謙虛，能接納他人意見。" }
-    ];
-
-    const DEFAULT_SETTINGS = {
-      activeLesson: "第一課 雅量",
+    const INITIAL_SETTINGS = {
+      activeLesson: "",
       timeLimit: 15,
       maxLives: 3,
       questionCount: 10,
@@ -823,94 +780,30 @@
     };
 
     // =========================================================================
-    // 2. 全域狀態變數與別名同步（確保不會發生 ReferenceError）
+    // 2. 記憶體狀態變數（完全不使用 localStorage 或內建題庫）
     // =========================================================================
     let allIdioms = [];
-    let idiomsList = [];
-    let appSettings = { ...DEFAULT_SETTINGS };
-    let gameSettings = appSettings;
+    let appSettings = { ...INITIAL_SETTINGS };
     let allScores = [];
-    let scoresList = [];
 
     let soundEnabled = true;
     let isAdminLoggedIn = false;
     let selectedIdiomIds = new Set();
 
-    // 同步所有別名並寫入 localStorage 確保重新整理後 100% 留存
-    function syncStateAliases() {
-      idiomsList = allIdioms;
-      gameSettings = appSettings;
-      scoresList = allScores;
-      window.allIdioms = allIdioms;
-      window.idiomsList = idiomsList;
-      window.appSettings = appSettings;
-      window.gameSettings = gameSettings;
-      window.allScores = allScores;
-      window.scoresList = scoresList;
-    }
-
-    function loadFromLocalStorage() {
-      try {
-        const savedIdioms = localStorage.getItem(LOCAL_KEYS.IDIOMS);
-        allIdioms = savedIdioms ? JSON.parse(savedIdioms) : [...DEFAULT_IDIOMS];
-        if (!Array.isArray(allIdioms) || allIdioms.length === 0) {
-          allIdioms = [...DEFAULT_IDIOMS];
-        }
-      } catch (e) {
-        allIdioms = [...DEFAULT_IDIOMS];
-      }
-
-      try {
-        const savedSettings = localStorage.getItem(LOCAL_KEYS.SETTINGS);
-        appSettings = savedSettings
-          ? { ...DEFAULT_SETTINGS, ...JSON.parse(savedSettings) }
-          : { ...DEFAULT_SETTINGS };
-      } catch (e) {
-        appSettings = { ...DEFAULT_SETTINGS };
-      }
-
-      try {
-        const savedScores = localStorage.getItem(LOCAL_KEYS.SCORES);
-        allScores = savedScores ? JSON.parse(savedScores) : [];
-        if (!Array.isArray(allScores)) allScores = [];
-      } catch (e) {
-        allScores = [];
-      }
-
-      syncStateAliases();
-    }
-
-    function saveToLocalStorage() {
-      syncStateAliases();
-      try {
-        localStorage.setItem(LOCAL_KEYS.IDIOMS, JSON.stringify(allIdioms));
-        localStorage.setItem(LOCAL_KEYS.SETTINGS, JSON.stringify(appSettings));
-        localStorage.setItem(LOCAL_KEYS.SCORES, JSON.stringify(allScores));
-      } catch (e) {
-        console.warn("寫入 localStorage 發生例外：", e);
-      }
-    }
-
-    // =========================================================================
-    // 3. Firebase 初始化與雲端即時同步
-    // =========================================================================
     let db = null;
     let auth = null;
     let isCloudReady = false;
     const appId = typeof __app_id !== "undefined" ? __app_id : "porcelain-idiom-app";
 
+    // =========================================================================
+    // 3. Firebase 初始化與雲端即時同步
+    // =========================================================================
     async function initFirebase() {
       try {
         const cfg =
           typeof __firebase_config !== "undefined" && __firebase_config
             ? JSON.parse(__firebase_config)
-            : HARDCODED_FIREBASE_CONFIG;
-
-        // 若是預設 Placeholder Key，維持本機永久儲存模式，避免無效請求報錯
-        if (!cfg.apiKey || cfg.apiKey.includes("PLACEHOLDER")) {
-          updateStorageStatusUI("💾 本機永久儲存模式（重新整理後資料永久保留）");
-          return;
-        }
+            : FIREBASE_CONFIG;
 
         const app = initializeApp(cfg);
         auth = getAuth(app);
@@ -923,7 +816,7 @@
         }
 
         isCloudReady = true;
-        updateStorageStatusUI("☁️ Firebase 雲端資料庫與本機快取雙重同步中");
+        updateStorageStatusUI("☁️ 已連線至 Firebase Firestore 雲端資料庫（即時同步中）");
 
         const stateDocRef = doc(db, "artifacts", appId, "public", "data", "idiomAppState", "main");
         onSnapshot(
@@ -931,33 +824,36 @@
           (snap) => {
             if (snap.exists()) {
               const data = snap.data();
-              if (Array.isArray(data.idioms) && data.idioms.length > 0) {
-                allIdioms = data.idioms;
-              }
-              if (data.settings) {
-                appSettings = { ...DEFAULT_SETTINGS, ...data.settings };
-              }
-              if (Array.isArray(data.scores)) {
-                allScores = data.scores;
-              }
-              saveToLocalStorage();
+              allIdioms = Array.isArray(data.idioms) ? data.idioms : [];
+              appSettings = data.settings
+                ? { ...INITIAL_SETTINGS, ...data.settings }
+                : { ...INITIAL_SETTINGS };
+              allScores = Array.isArray(data.scores) ? data.scores : [];
               updateAllUI();
             } else {
+              // 雲端尚無主文件時，初始化空結構至 Firebase
               pushStateToCloud();
+              updateAllUI();
             }
           },
           (err) => {
-            console.warn("Firestore 監聽切換為本機模式：", err.message);
+            console.error("Firestore 監聽失敗：", err);
+            updateStorageStatusUI("❌ Firebase 雲端資料庫讀取失敗：" + err.message);
+            showToast("❌ 無法讀取 Firebase 資料庫，請檢查網路或權限設定！", true);
           }
         );
       } catch (err) {
-        updateStorageStatusUI("💾 本機永久儲存模式（重新整理後資料永久保留）");
+        console.error("Firebase 初始化失敗：", err);
+        updateStorageStatusUI("❌ Firebase 初始化失敗，請確認 FIREBASE_CONFIG 設定是否正確");
+        showToast("❌ Firebase 連線失敗，請檢查設定！", true);
       }
     }
 
     async function pushStateToCloud() {
-      saveToLocalStorage();
-      if (!isCloudReady || !db) return;
+      if (!isCloudReady || !db) {
+        showToast("⚠️ 尚未連線至 Firebase 雲端資料庫，無法儲存變更！", true);
+        return;
+      }
       try {
         const stateDocRef = doc(db, "artifacts", appId, "public", "data", "idiomAppState", "main");
         await setDoc(stateDocRef, {
@@ -967,7 +863,8 @@
           updatedAt: Date.now()
         });
       } catch (e) {
-        console.warn("同步雲端失敗（已保存於本機）：", e.message);
+        console.error("寫入 Firebase 失敗：", e);
+        showToast("❌ 寫入雲端資料庫失敗：" + e.message, true);
       }
     }
 
@@ -998,7 +895,6 @@
         const now = audioCtx.currentTime;
 
         if (type === "correct") {
-          // 清脆古箏五聲音階上行 (宮商角徵羽)
           [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
@@ -1050,7 +946,7 @@
     };
 
     // =========================================================================
-    // 5. 輔助與 UI 同步函式 (getUniqueLessons, getIdiomsByLesson, updateAllUI)
+    // 5. 輔助與 UI 同步函式
     // =========================================================================
     function showToast(message, isError = false) {
       const container = document.getElementById("toast-container");
@@ -1076,7 +972,6 @@
           set.add(item.lesson.trim());
         }
       });
-      if (set.size === 0) set.add("第一課 雅量");
       return Array.from(set);
     }
 
@@ -1085,17 +980,18 @@
     }
 
     function updateAllUI() {
-      syncStateAliases();
       const lessons = getUniqueLessons();
 
-      // 若目前指定課次不存在於題庫中，自動切換至第一個有效課次
-      if (!lessons.includes(appSettings.activeLesson)) {
+      // 若雲端題庫有課次，且目前指定課次不在清單中，自動切換至第一個課次
+      if (lessons.length > 0 && !lessons.includes(appSettings.activeLesson)) {
         appSettings.activeLesson = lessons[0];
-        saveToLocalStorage();
+      } else if (lessons.length === 0) {
+        appSettings.activeLesson = "";
       }
 
       const activeLesson = appSettings.activeLesson;
-      const activeLessonIdioms = getIdiomsByLesson(activeLesson);
+      const displayLesson = activeLesson || "尚未建立課次題庫";
+      const activeLessonIdioms = activeLesson ? getIdiomsByLesson(activeLesson) : [];
 
       // 頂部與首頁課次資訊
       const navLessonEl = document.getElementById("nav-active-lesson");
@@ -1104,8 +1000,8 @@
       const ruleTimeEl = document.getElementById("rule-time-limit");
       const ruleLivesEl = document.getElementById("rule-max-lives");
 
-      if (navLessonEl) navLessonEl.textContent = activeLesson;
-      if (homeLessonEl) homeLessonEl.textContent = activeLesson;
+      if (navLessonEl) navLessonEl.textContent = displayLesson;
+      if (homeLessonEl) homeLessonEl.textContent = displayLesson;
       if (homeCountEl) homeCountEl.textContent = `${activeLessonIdioms.length} 題`;
       if (ruleTimeEl) ruleTimeEl.textContent = `${appSettings.timeLimit} 秒`;
       if (ruleLivesEl) ruleLivesEl.textContent = `${appSettings.maxLives} 顆愛心生命值`;
@@ -1113,9 +1009,13 @@
       // 後台指定課次下拉選單
       const activeSelect = document.getElementById("admin-active-lesson-select");
       if (activeSelect) {
-        activeSelect.innerHTML = lessons
-          .map((l) => `<option value="${l}" ${l === activeLesson ? "selected" : ""}>${l}（${getIdiomsByLesson(l).length} 題）</option>`)
-          .join("");
+        if (lessons.length === 0) {
+          activeSelect.innerHTML = `<option value="">（雲端尚無課次資料）</option>`;
+        } else {
+          activeSelect.innerHTML = lessons
+            .map((l) => `<option value="${l}" ${l === activeLesson ? "selected" : ""}>${l}（${getIdiomsByLesson(l).length} 題）</option>`)
+            .join("");
+        }
       }
 
       // 後台參數輸入框
@@ -1152,7 +1052,6 @@
 
     window.updateAllUI = updateAllUI;
 
-    // 畫面切換
     window.switchView = function (viewName) {
       ["home", "game", "result", "admin"].forEach((v) => {
         const el = document.getElementById(`view-${v}`);
@@ -1161,7 +1060,7 @@
     };
 
     // =========================================================================
-    // 6. 遊戲核心流程（隨機抽題、挖空 4 選 1、雙血條計時、答對慶祝、答錯彈窗）
+    // 6. 遊戲核心流程
     // =========================================================================
     let currentSession = {
       playerName: "",
@@ -1191,6 +1090,11 @@
     }
 
     window.startGame = function () {
+      if (!isCloudReady) {
+        showToast("⚠️ 正在連線至 Firebase 雲端資料庫，請稍候...", true);
+        return;
+      }
+
       const nameInput = document.getElementById("player-name-input");
       const playerName = nameInput ? nameInput.value.trim() : "";
       if (!playerName) {
@@ -1200,9 +1104,9 @@
       }
 
       const activeLesson = appSettings.activeLesson;
-      const pool = getIdiomsByLesson(activeLesson);
+      const pool = activeLesson ? getIdiomsByLesson(activeLesson) : [];
       if (pool.length === 0) {
-        showToast(`⚠️ 「${activeLesson}」目前沒有四字成語題庫，請先至管理後台匯入！`, true);
+        showToast("⚠️ 目前雲端指定課次尚無四字成語題庫，請先至管理後台新增或匯入！", true);
         return;
       }
 
@@ -1210,7 +1114,7 @@
       const qCount = Math.min(pool.length, Math.max(1, Number(appSettings.questionCount) || 10));
       const pickedIdioms = shuffleArray(pool).slice(0, qCount);
 
-      // 建立每題的隨機挖空位置與 4 個候選字
+      // 建立每題的隨機挖空位置與 4 個候選字（從雲端現有題庫字池抽取干擾字）
       const allCharsPool = Array.from(
         new Set(
           allIdioms
@@ -1219,7 +1123,6 @@
             .split("")
         )
       );
-      const fallbackChars = "天地玄黃宇宙洪荒日月盈昃辰宿列張寒來暑往秋收冬藏雲騰致雨露結為霜金生麗水玉出崑岡".split("");
 
       const questions = pickedIdioms.map((item) => {
         const chars = item.idiom.split("");
@@ -1227,11 +1130,19 @@
         const correctChar = chars[blankIndex];
 
         const distractors = [];
-        const candidatePool = shuffleArray([...allCharsPool, ...fallbackChars]);
+        const candidatePool = shuffleArray(allCharsPool);
         for (const ch of candidatePool) {
           if (ch !== correctChar && !chars.includes(ch) && !distractors.includes(ch)) {
             distractors.push(ch);
             if (distractors.length === 3) break;
+          }
+        }
+
+        // 若雲端題庫字數極少（例如只有 1 題），以同題其他字補足選項
+        for (const ch of chars) {
+          if (distractors.length >= 3) break;
+          if (ch !== correctChar && !distractors.includes(ch)) {
+            distractors.push(ch);
           }
         }
 
@@ -1270,7 +1181,6 @@
     };
 
     function updateDualHealthBars() {
-      // 1. 生命值與進度血條
       const heartsText =
         "❤️".repeat(Math.max(0, currentSession.lives)) +
         "🖤".repeat(Math.max(0, currentSession.maxLives - currentSession.lives));
@@ -1284,7 +1194,6 @@
       document.getElementById("game-progress-text").textContent = `${curNum} / ${totalQ}`;
       document.getElementById("progress-bar-fill").style.width = `${(curNum / totalQ) * 100}%`;
 
-      // 2. 分數
       document.getElementById("game-score").textContent = currentSession.score;
     }
 
@@ -1302,10 +1211,8 @@
       const q = currentSession.questions[currentSession.currentIndex];
       updateDualHealthBars();
 
-      // 渲染釋義
       document.getElementById("game-idiom-meaning").textContent = q.meaning;
 
-      // 渲染四個青花米字格
       const boxesContainer = document.getElementById("game-idiom-boxes");
       boxesContainer.innerHTML = q.idiom
         .split("")
@@ -1325,7 +1232,6 @@
         })
         .join("");
 
-      // 渲染 4 個候選字青花瓷牌
       const optionsGrid = document.getElementById("game-options-grid");
       optionsGrid.innerHTML = q.options
         .map(
@@ -1341,7 +1247,6 @@
         )
         .join("");
 
-      // 啟動本題時間血條倒數
       currentSession.remainingTime = currentSession.timeLimit;
       updateTimerBarUI();
 
@@ -1382,7 +1287,6 @@
       const blankBox = document.getElementById("blank-slot-box");
 
       if (chosenChar === q.correctChar) {
-        // 答對：填入缺字、播放慶祝彩帶與音效、加分、自動進入下一題
         playSound("correct");
         const timeBonus = Math.round(currentSession.remainingTime * 2);
         const gained = 100 + timeBonus;
@@ -1434,7 +1338,6 @@
 
       updateDualHealthBars();
 
-      // 顯示正確答案彈出視窗，短暫停留 2.4 秒後自動關閉並進入下一題
       const modal = document.getElementById("modal-wrong-answer");
       const titleEl = document.getElementById("wrong-modal-title");
       const idiomEl = document.getElementById("wrong-modal-idiom");
@@ -1445,7 +1348,6 @@
         ? "⏰ 時間到！扣除 1 顆愛心"
         : `❌ 答錯了（您選了「${chosenChar}」）！扣除 1 顆愛心`;
 
-      // 標示出挖空的那個正確字
       idiomEl.innerHTML = q.idiom
         .split("")
         .map((ch, idx) =>
@@ -1484,7 +1386,7 @@
       window.switchView("home");
     };
 
-    function finishGame() {
+    async function finishGame() {
       clearInterval(currentSession.timerInterval);
       clearInterval(currentSession.wrongModalTimer);
 
@@ -1499,11 +1401,9 @@
       };
 
       allScores.push(newRecord);
-      // 依總分由高至低排序，同分則答對題數多者優先
       allScores.sort((a, b) => b.score - a.score || b.correctCount - a.correctCount);
-      pushStateToCloud();
+      await pushStateToCloud();
 
-      // 計算在該課次的名次
       const lessonScores = allScores.filter((s) => s.lesson === currentSession.lesson);
       const rankIndex = lessonScores.findIndex((s) => s.id === newRecord.id);
       const rankNum = rankIndex >= 0 ? rankIndex + 1 : 1;
@@ -1551,7 +1451,7 @@
       const lessons = getUniqueLessons();
 
       select.innerHTML =
-         lessons
+        lessons
           .map(
             (l) =>
               `<option value="${l}" ${
@@ -1572,7 +1472,7 @@
     };
 
     window.renderLeaderboardList = function () {
-      const lessonFilter = document.getElementById("leaderboard-lesson-select").value;
+      const lessonFilter = document.getElementById("leaderboard-lesson-select").value || "ALL";
       const container = document.getElementById("leaderboard-list-container");
 
       const list =
@@ -1585,7 +1485,7 @@
       if (list.length === 0) {
         container.innerHTML = `
           <div class="py-12 text-center text-sm text-slate-500 font-bold">
-            目前此課次尚無挑戰紀錄，快來成為第一位上榜的高手！
+            目前雲端此課次尚無挑戰紀錄，快來成為第一位上榜的高手！
           </div>
         `;
         return;
@@ -1689,7 +1589,7 @@
       modal.classList.remove("flex");
     };
 
-    window.saveNewAdminPassword = function () {
+    window.saveNewAdminPassword = async function () {
       const oldVal = document.getElementById("cp-old-pwd").value.trim();
       const newVal = document.getElementById("cp-new-pwd").value.trim();
       const confirmVal = document.getElementById("cp-confirm-pwd").value.trim();
@@ -1713,22 +1613,23 @@
       }
 
       appSettings.adminPassword = newVal;
-      pushStateToCloud();
+      await pushStateToCloud();
       window.closeChangePasswordModal();
-      showToast("✅ 管理密碼已成功修改並永久儲存！");
+      showToast("✅ 管理密碼已成功同步更新至 Firebase！");
     };
 
     // =========================================================================
     // 9. 管理後台：Excel 匯入、題庫修改與批次刪除、指定課次
     // =========================================================================
-    window.handleChangeActiveLesson = function (newLesson) {
+    window.handleChangeActiveLesson = async function (newLesson) {
+      if (!newLesson) return;
       appSettings.activeLesson = newLesson;
-      pushStateToCloud();
+      await pushStateToCloud();
       updateAllUI();
       showToast(`📌 已將指定挑戰課次設為「${newLesson}」`);
     };
 
-    window.handleSaveSettings = function () {
+    window.handleSaveSettings = async function () {
       const t = Number(document.getElementById("admin-time-limit").value) || 15;
       const l = Number(document.getElementById("admin-max-lives").value) || 3;
       const q = Number(document.getElementById("admin-question-count").value) || 10;
@@ -1737,12 +1638,11 @@
       appSettings.maxLives = Math.min(10, Math.max(1, l));
       appSettings.questionCount = Math.min(50, Math.max(4, q));
 
-      pushStateToCloud();
+      await pushStateToCloud();
       updateAllUI();
-      showToast("💾 遊戲規則參數已儲存！");
+      showToast("☁️ 遊戲規則參數已同步至 Firebase！");
     };
 
-    // 匯入 Excel（格式如附圖一：第一欄「成語」、第二欄「解釋」）
     window.handleExcelUpload = function (event) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
@@ -1750,13 +1650,12 @@
       const lessonInput = document.getElementById("excel-lesson-input");
       let targetLesson = lessonInput && lessonInput.value.trim();
       if (!targetLesson) {
-        // 若未填寫課次名稱，預設取檔名作為課次名稱
-        targetLesson = file.name.replace(/\.(xlsx|xls|csv)$/i, "").trim() || appSettings.activeLesson;
+        targetLesson = file.name.replace(/\.(xlsx|xls|csv)$/i, "").trim() || appSettings.activeLesson || "預設課次";
         if (lessonInput) lessonInput.value = targetLesson;
       }
 
       const reader = new FileReader();
-      reader.onload = function (e) {
+      reader.onload = async function (e) {
         try {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: "array" });
@@ -1770,7 +1669,6 @@
             const colB = String(row[1] || "").trim();
             const colC = String(row[2] || "").trim();
 
-            // 略過標題列（成語 / 解釋）
             if (index === 0 && (colA === "成語" || colA === "課次" || colB === "成語")) {
               return;
             }
@@ -1779,7 +1677,6 @@
             let idiomWord = colA;
             let meaningText = colB;
 
-            // 相容三欄格式（課次、成語、解釋）
             if (colA.length !== 4 && colB.length === 4) {
               rowLesson = colA || targetLesson;
               idiomWord = colB;
@@ -1787,7 +1684,6 @@
             }
 
             if (idiomWord.length === 4) {
-              // 檢查同課次是否已有相同成語，若有則更新解釋，否則新增
               const existingIdx = allIdioms.findIndex(
                 (x) => x.lesson === rowLesson && x.idiom === idiomWord
               );
@@ -1815,9 +1711,9 @@
             const filterSelect = document.getElementById("admin-filter-lesson");
             if (filterSelect) filterSelect.value = targetLesson;
 
-            pushStateToCloud();
+            await pushStateToCloud();
             updateAllUI();
-            showToast(`✅ 成功匯入 ${importedCount} 筆成語至「${targetLesson}」並永久保存！`);
+            showToast(`✅ 成功匯入 ${importedCount} 筆成語至「${targetLesson}」並儲存至 Firebase！`);
           }
         } catch (err) {
           console.error("解析 Excel 失敗：", err);
@@ -1839,10 +1735,14 @@
       const ws = XLSX.utils.aoa_to_sheet(sampleRows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "成語匯入範本");
-      XLSX.writeFile(wb, "成語匯入範本_第一課雅量.xlsx");
+      XLSX.writeFile(wb, "成語匯入範本.xlsx");
     };
 
     window.exportAllIdiomsExcel = function () {
+      if (allIdioms.length === 0) {
+        showToast("⚠️ 目前雲端題庫尚無成語資料可匯出！", true);
+        return;
+      }
       const rows = [
         ["成語", "解釋", "課次"],
         ...allIdioms.map((x) => [x.idiom, x.meaning, x.lesson])
@@ -1850,7 +1750,7 @@
       const ws = XLSX.utils.aoa_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "全部成語題庫");
-      XLSX.writeFile(wb, "成語填填看_題庫備份.xlsx");
+      XLSX.writeFile(wb, "成語填填看_雲端題庫備份.xlsx");
     };
 
     window.renderAdminIdiomsTable = function () {
@@ -1869,7 +1769,7 @@
       if (filtered.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" class="p-8 text-center text-slate-400 font-bold">目前沒有符合條件的成語資料</td>
+            <td colspan="5" class="p-8 text-center text-slate-400 font-bold">目前 Firebase 雲端資料庫中沒有符合條件的成語資料</td>
           </tr>
         `;
         return;
@@ -1922,7 +1822,7 @@
       window.renderAdminIdiomsTable();
     };
 
-    window.batchDeleteSelectedIdioms = function () {
+    window.batchDeleteSelectedIdioms = async function () {
       if (selectedIdiomIds.size === 0) {
         showToast("⚠️ 請先在左側方框勾選要批次刪除的成語！", true);
         return;
@@ -1933,23 +1833,23 @@
       const selectAllBox = document.getElementById("admin-select-all-checkbox");
       if (selectAllBox) selectAllBox.checked = false;
 
-      pushStateToCloud();
+      await pushStateToCloud();
       updateAllUI();
-      showToast(`🗑️ 已批次刪除 ${deleteCount} 筆成語並同步儲存！`);
+      showToast(`🗑️ 已從 Firebase 批次刪除 ${deleteCount} 筆成語！`);
     };
 
-    window.deleteSingleIdiom = function (id) {
+    window.deleteSingleIdiom = async function (id) {
       allIdioms = allIdioms.filter((item) => item.id !== id);
       selectedIdiomIds.delete(id);
-      pushStateToCloud();
+      await pushStateToCloud();
       updateAllUI();
-      showToast("🗑️ 已刪除該筆成語");
+      showToast("🗑️ 已從 Firebase 刪除該筆成語");
     };
 
     window.openAddIdiomModal = function () {
       document.getElementById("edit-idiom-modal-title").textContent = "➕ 單筆新增成語";
       document.getElementById("edit-idiom-id").value = "";
-      document.getElementById("edit-idiom-lesson").value = appSettings.activeLesson;
+      document.getElementById("edit-idiom-lesson").value = appSettings.activeLesson || "";
       document.getElementById("edit-idiom-word").value = "";
       document.getElementById("edit-idiom-meaning").value = "";
       const modal = document.getElementById("modal-edit-idiom");
@@ -1976,7 +1876,7 @@
       modal.classList.remove("flex");
     };
 
-    window.saveIdiomModal = function () {
+    window.saveIdiomModal = async function () {
       const id = document.getElementById("edit-idiom-id").value.trim();
       const lesson = document.getElementById("edit-idiom-lesson").value.trim();
       const idiom = document.getElementById("edit-idiom-word").value.trim();
@@ -2003,12 +1903,15 @@
           idiom,
           meaning
         });
+        if (!appSettings.activeLesson) {
+          appSettings.activeLesson = lesson;
+        }
       }
 
-      pushStateToCloud();
+      await pushStateToCloud();
       updateAllUI();
       window.closeEditIdiomModal();
-      showToast("✅ 成語資料已儲存！");
+      showToast("✅ 成語資料已同步儲存至 Firebase！");
     };
 
     // =========================================================================
@@ -2062,26 +1965,30 @@
         .join("");
     };
 
-    window.deleteSingleScore = function (id) {
+    window.deleteSingleScore = async function (id) {
       allScores = allScores.filter((s) => s.id !== id);
-      pushStateToCloud();
+      await pushStateToCloud();
       updateAllUI();
-      showToast("🗑️ 已刪除該筆成績紀錄");
+      showToast("🗑️ 已從 Firebase 刪除該筆成績紀錄");
     };
 
-    window.clearFilteredScores = function () {
+    window.clearFilteredScores = async function () {
       const lessonFilter = document.getElementById("admin-score-lesson-filter")?.value || "ALL";
       if (lessonFilter === "ALL") {
         allScores = [];
       } else {
         allScores = allScores.filter((s) => s.lesson !== lessonFilter);
       }
-      pushStateToCloud();
+      await pushStateToCloud();
       updateAllUI();
-      showToast("🗑️ 已清空篩選的成績紀錄");
+      showToast("🗑️ 已清空篩選的雲端成績紀錄");
     };
 
     window.exportScoresExcel = function () {
+      if (allScores.length === 0) {
+        showToast("⚠️ 目前尚無成績資料可匯出！", true);
+        return;
+      }
       const rows = [
         ["名次", "挑戰者姓名/座號", "挑戰課次", "總分", "答對題數", "答錯題數", "挑戰時間"],
         ...allScores.map((s, i) => [
@@ -2101,9 +2008,8 @@
     };
 
     // =========================================================================
-    // 11. 啟動初始化
+    // 11. 啟動初始化（僅呼叫 UI 渲染與 Firebase 雲端連線）
     // =========================================================================
-    loadFromLocalStorage();
     updateAllUI();
     initFirebase();
   </script>
