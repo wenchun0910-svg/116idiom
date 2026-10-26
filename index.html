@@ -10,10 +10,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Google Fonts: Iansui (芫荽體) 與 Noto Serif TC (思源宋體) -->
+    <!-- Google Fonts: 唯一載入 思源宋體 (Noto Serif TC: 400, 500, 600, 700, 900) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Iansui&family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <!-- SheetJS for Excel (.xlsx / .xls / .csv) parsing & export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Canvas Confetti for Celebration Animation -->
@@ -24,9 +24,10 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['"Iansui"', '"Noto Sans TC"', 'sans-serif'],
-                        serif: ['"Noto Serif TC"', '"Iansui"', 'serif'],
-                        iansui: ['"Iansui"', 'serif'],
+                        sans: ['"Noto Serif TC"', 'serif'],
+                        serif: ['"Noto Serif TC"', 'serif'],
+                        mono: ['"Noto Serif TC"', 'serif'],
+                        iansui: ['"Noto Serif TC"', 'serif'],
                     },
                     colors: {
                         /* 天青冰瓷底色系 */
@@ -78,6 +79,11 @@
     </script>
 
     <style>
+        /* 全站強制唯一使用「思源宋體 (Noto Serif TC)」 */
+        *, *::before, *::after, body, button, input, select, textarea, table, th, td, span, p, h1, h2, h3, h4, div {
+            font-family: 'Noto Serif TC', serif !important;
+        }
+
         /* 天青冰瓷與青花山水祥雲水墨底紋 */
         body {
             background-color: #F0F6FA;
@@ -88,7 +94,7 @@
             color: #0F2C59;
             min-height: 100vh;
             overflow-x: hidden;
-            font-family: "Iansui", "Noto Serif TC", serif;
+            font-family: 'Noto Serif TC', serif !important;
         }
 
         /* 青花雙線窗櫺白瓷卡片 */
@@ -276,12 +282,12 @@
             </div>
 
             <!-- 右側功能按鈕列 -->
-            <div class="flex items-center gap-2 sm:gap-3 font-sans">
-                <!-- 資料儲存狀態指示燈 -->
-                <div id="storage-status-badge" onclick="window.openFirebaseConfigModal()" title="點擊查看或設定雲端資料庫"
-                    class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0A1E3F]/70 hover:bg-[#0A1E3F] border border-sky-300/30 text-xs text-sky-100 cursor-pointer transition">
+            <div class="flex items-center gap-2 sm:gap-3 font-serif">
+                <!-- 資料儲存狀態指示燈 (直接讀取程式碼內建設定) -->
+                <div id="storage-status-badge" title="資料庫設定已直接內建於網頁程式中"
+                    class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0A1E3F]/70 border border-sky-300/30 text-xs text-sky-100">
                     <span id="storage-status-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span id="storage-status-text">本機永久保存中</span>
+                    <span id="storage-status-text">資料庫同步中</span>
                 </div>
 
                 <!-- 音效開啟/關閉 -->
@@ -659,7 +665,7 @@
                     </div>
                 </div>
 
-                <!-- 後台分頁切換 Tabs：1. 題庫與課次管理 2. 學生成績查詢 3. 雲端與系統設定 -->
+                <!-- 後台分頁切換 Tabs：1. 題庫與課次管理 2. 學生成績查詢 3. 課堂規則設定 -->
                 <div class="flex flex-wrap gap-2 mb-6">
                     <button id="tab-btn-idioms" onclick="window.switchAdminTab('idioms')" class="px-5 py-2.5 rounded-xl font-bold text-sm transition bg-cinnabar-600 text-paper-50 shadow-md">
                         <i class="fa-solid fa-file-excel mr-1.5"></i>題庫與課次管理
@@ -668,7 +674,7 @@
                         <i class="fa-solid fa-chart-column mr-1.5"></i>學生成績查詢
                     </button>
                     <button id="tab-btn-settings" onclick="window.switchAdminTab('settings')" class="px-5 py-2.5 rounded-xl font-bold text-sm transition bg-paper-200 text-ink-800 border border-cinnabar-600/30 hover:bg-paper-300">
-                        <i class="fa-solid fa-cloud-arrow-up mr-1.5"></i>雲端與系統設定
+                        <i class="fa-solid fa-sliders mr-1.5"></i>課堂規則與指定課次設定
                     </button>
                 </div>
 
@@ -886,6 +892,29 @@
                             <!-- 是否強制鎖定指定課次 -->
                             <div class="flex items-center justify-between p-4 rounded-xl bg-white border border-cinnabar-600/30">
                                 <div>
+                <!-- ==================== 後台分頁 3：課堂規則與指定課次設定 ==================== -->
+                <div id="admin-tab-settings" class="hidden">
+                    <div class="max-w-2xl mx-auto">
+                        <!-- 指定挑戰課次與遊戲規則設定 -->
+                        <div class="p-6 rounded-xl bg-paper-100 border-2 border-cinnabar-600/30 space-y-5">
+                            <h3 class="text-lg font-bold text-ink-900 border-b border-cinnabar-600/20 pb-3 font-serif">
+                                <i class="fa-solid fa-sliders mr-2 text-cinnabar-600"></i>課堂挑戰規則與指定課次設定
+                            </h3>
+
+                            <!-- 指定挑戰課次 -->
+                            <div>
+                                <label class="block text-sm font-bold text-ink-900 mb-2">
+                                    1. 管理者指定挑戰課次 (啟動畫面預設抽題課次)
+                                </label>
+                                <select id="setting-designated-lesson" class="w-full px-4 py-3 rounded-xl bg-white border-2 border-cinnabar-600/50 text-cinnabar-600 font-black text-base outline-none font-serif">
+                                    <!-- JS 動態填入現有課次 -->
+                                </select>
+                                <p class="text-xs text-ink-700 mt-1">學生進入挑戰時，系統將隨機從此課次抽取四字成語作為青花米字格填空題目。</p>
+                            </div>
+
+                            <!-- 是否強制鎖定指定課次 -->
+                            <div class="flex items-center justify-between p-4 rounded-xl bg-white border border-cinnabar-600/30">
+                                <div>
                                     <span class="font-bold text-sm text-ink-900 block">強制鎖定此課次 (顯示「強制指定」標章)</span>
                                     <span class="text-xs text-ink-700">開啟後學生不可自行切換其他課次；關閉則允許學生下拉選擇課次。</span>
                                 </div>
@@ -913,29 +942,6 @@
 
                             <button onclick="window.saveAdminSettings()" class="w-full py-3.5 rounded-xl bg-cinnabar-600 hover:bg-cinnabar-700 text-paper-50 font-black text-base shadow-lg transition flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-floppy-disk"></i> 儲存並套用課堂設定
-                            </button>
-                        </div>
-
-                        <!-- 右側：雲端 Firebase Config 與雙重持久化說明 -->
-                        <div class="p-6 rounded-xl bg-paper-100 border-2 border-cinnabar-600/30 space-y-4 flex flex-col justify-between">
-                            <div>
-                                <h3 class="text-lg font-bold text-ink-900 border-b border-cinnabar-600/20 pb-3 mb-3 font-serif">
-                                    <i class="fa-solid fa-database mr-2 text-cinnabar-600"></i>雙重持久化與 Firebase 雲端資料庫設定
-                                </h3>
-                                <div class="p-3.5 rounded-xl bg-white border border-cinnabar-600/30 text-xs text-ink-800 space-y-1.5 leading-relaxed mb-4">
-                                    <p class="font-bold text-cinnabar-600"><i class="fa-solid fa-circle-check mr-1"></i>本機永久儲存（LocalStorage）已自動啟用：</p>
-                                    <p>您匯入的所有 Excel 課次成語、修改紀錄與指定課次皆已即時寫入瀏覽器永久儲存區，<strong>重新整理 (F5) 網頁絕不消失！</strong></p>
-                                    <p class="font-bold text-cinnabar-600 pt-1"><i class="fa-solid fa-cloud mr-1"></i>跨裝置 Firebase 雲端同步（選填）：</p>
-                                    <p>若您將此單一 HTML 檔案部署於學校網頁供不同電腦/平板同步作答，可於下方貼上您的 Firebase Config JSON：</p>
-                                </div>
-
-                                <label class="block text-xs font-bold text-ink-800 mb-1.5">自訂 Firebase Config (JSON 格式)：</label>
-                                <textarea id="inline-firebase-config-input" rows="5" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "..."}'
-                                    class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cinnabar-600/50 text-ink-900 text-xs font-mono outline-none"></textarea>
-                            </div>
-
-                            <button onclick="window.saveInlineFirebaseConfig()" class="w-full py-3.5 rounded-xl bg-jade-600 hover:bg-jade-700 text-white font-black text-base shadow-lg transition flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-cloud-bolt"></i> 儲存 Firebase 雲端設定並連線
                             </button>
                         </div>
                     </div>
@@ -1111,8 +1117,8 @@
         </div>
     </div>
 
-    <!-- ==================== 雲端資料庫 (Firebase Config) 設定視窗 ==================== -->
-    <div id="firebase-config-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4 font-sans">
+    <!-- ==================== 自訂確認對話框 (取代 window.confirm) ==================== -->
+    <div id="custom-confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4 font-serif">
         <div class="w-full max-w-lg rounded-2xl chinese-scroll-card p-6 sm:p-7">
             <h3 class="text-xl font-black text-ink-900 mb-1 flex items-center gap-2 font-serif">
                 <i class="fa-solid fa-cloud text-porcelain-600"></i> 儲存狀態與 Firebase 雲端同步設定
@@ -1146,22 +1152,23 @@
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
             <h4 id="confirm-modal-title" class="text-lg font-bold text-ink-900 mb-2 font-serif">確認執行操作？</h4>
-            <p id="confirm-modal-desc" class="text-xs sm:text-sm text-ink-700 mb-6"></p>
-            <div class="flex items-center justify-center gap-3">
-                <button onclick="window.closeConfirmModal(false)" class="flex-1 py-2.5 rounded-xl bg-paper-200 hover:bg-paper-300 text-ink-800 text-sm font-bold">取消</button>
-                <button onclick="window.closeConfirmModal(true)" class="flex-1 py-2.5 rounded-xl bg-cinnabar-600 hover:bg-cinnabar-700 text-white text-sm font-bold">確定執行</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==================== 右下角通知 Toast ==================== -->
-    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none font-sans"></div>
-
-    <!-- ==================== 核心腳本 (含本機永久保存 + Firebase 雲端雙重持久化) ==================== -->
+    <!-- ==================== 核心腳本 (資料庫設定直接內建於程式碼中 + 雙重持久化) ==================== -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // =========================================================
+        // 0. 內建於網頁程式碼中的 Firebase 資料庫設定 (可直接在此替換為您的專案參數)
+        // =========================================================
+        const HARDCODED_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyD-YourBuiltInFirebaseApiKeyHere",
+            authDomain: "changan-idiom-challenge.firebaseapp.com",
+            projectId: "changan-idiom-challenge",
+            storageBucket: "changan-idiom-challenge.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef1234567890"
+        };
 
         // ---------------------------------------------------------
         // 1. LocalStorage 永久儲存鍵值與預設題庫 (第一課 雅量 16題、第二課 夏夜 8題)
@@ -1169,8 +1176,7 @@
         const STORAGE_KEYS = {
             IDIOMS: 'idiom_challenge_blue_idioms_v4',
             SETTINGS: 'idiom_challenge_blue_settings_v4',
-            SCORES: 'idiom_challenge_blue_scores_v4',
-            CUSTOM_FB: 'idiom_challenge_blue_custom_fb_v4'
+            SCORES: 'idiom_challenge_blue_scores_v4'
         };
 
         const DEFAULT_IDIOMS = [
@@ -1203,261 +1209,7 @@
         const DISTRACTOR_POOL = "春花秋月山川草木風雲雷電日月星辰天地人和心手眼耳口鼻金木水火土東西南北中大小多少高低長短方圓明暗冷暖快慢進退得失成敗是非善惡美醜真假虛實動靜輕重緩急難易深淺遠近古今中外仁義禮智信忠孝廉恥溫良恭儉讓".split("");
 
         // ---------------------------------------------------------
-        // 2. 本機讀寫輔助函式 (確保重新整理後匯入資料 100% 永久留存)
-        // ---------------------------------------------------------
-        function loadFromLocalStorage() {
-            try {
-                // 相容舊版與新版 LocalStorage 題庫
-                const savedIdioms = localStorage.getItem(STORAGE_KEYS.IDIOMS) || localStorage.getItem('idiom_challenge_idioms_v3');
-                const parsedIdioms = savedIdioms ? JSON.parse(savedIdioms) : null;
-
-                const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS) || localStorage.getItem('idiom_challenge_settings_v3');
-                const parsedSettings = savedSettings ? JSON.parse(savedSettings) : null;
-
-                const savedScores = localStorage.getItem(STORAGE_KEYS.SCORES) || localStorage.getItem('idiom_challenge_scores_v3');
-                const parsedScores = savedScores ? JSON.parse(savedScores) : null;
-
-                return {
-                    idioms: Array.isArray(parsedIdioms) && parsedIdioms.length > 0 ? parsedIdioms : [...DEFAULT_IDIOMS],
-                    hasCustomLocalIdioms: Array.isArray(parsedIdioms) && parsedIdioms.length > 0,
-                    settings: parsedSettings ? {
-                        designatedLesson: parsedSettings.designatedLesson || "第一課 雅量",
-                        lockLesson: parsedSettings.lockLesson !== undefined ? parsedSettings.lockLesson : true,
-                        questionsPerRound: Number(parsedSettings.questionsPerRound) || 10,
-                        timeLimit: Number(parsedSettings.timeLimit) || 15,
-                        maxLives: Number(parsedSettings.maxLives) || 3,
-                        adminPassword: parsedSettings.adminPassword ? String(parsedSettings.adminPassword) : "1234"
-                    } : {
-                        designatedLesson: "第一課 雅量",
-                        lockLesson: true,
-                        questionsPerRound: 10,
-                        timeLimit: 15,
-                        maxLives: 3,
-                        adminPassword: "1234"
-                    },
-                    scores: Array.isArray(parsedScores) ? parsedScores : []
-                };
-            } catch (e) {
-                console.warn("讀取本機儲存空間失敗:", e);
-                return {
-                    idioms: [...DEFAULT_IDIOMS],
-                    hasCustomLocalIdioms: false,
-                    settings: {
-                        designatedLesson: "第一課 雅量",
-                        lockLesson: true,
-                        questionsPerRound: 10,
-                        timeLimit: 15,
-                        maxLives: 3,
-                        adminPassword: "1234"
-                    },
-                    scores: []
-                };
-            }
-        }
-
-        function saveIdiomsToLocal(list) {
-            try {
-                localStorage.setItem(STORAGE_KEYS.IDIOMS, JSON.stringify(list));
-            } catch (e) {
-                console.warn("寫入題庫至本機失敗:", e);
-            }
-        }
-
-        function saveSettingsToLocal(settingsObj) {
-            try {
-                localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settingsObj));
-            } catch (e) {
-                console.warn("寫入設定至本機失敗:", e);
-            }
-        }
-
-        function saveScoresToLocal(scoresArr) {
-            try {
-                localStorage.setItem(STORAGE_KEYS.SCORES, JSON.stringify(scoresArr));
-            } catch (e) {
-                console.warn("寫入成績至本機失敗:", e);
-            }
-        }
-
-        // ---------------------------------------------------------
-        // 3. 全域狀態初始化 (啟動時立即載入本機已存資料)
-        // ---------------------------------------------------------
-        const initialLocalData = loadFromLocalStorage();
-        let idiomsList = initialLocalData.idioms;
-        let gameSettings = initialLocalData.settings;
-        let scoresList = initialLocalData.scores;
-
-        let app = null;
-        let db = null;
-        let auth = null;
-        let currentUser = null;
-        let isCloudReady = false;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-idiom-app';
-
-        let isAdminAuthenticated = false;
-        let selectedIdiomIds = new Set();
-        let soundEnabled = true;
-        let audioCtx = null;
-
-        let activeGame = {
-            playerName: "chun",
-            lesson: "第一課 雅量",
-            questions: [],
-            currentIndex: 0,
-            score: 0,
-            lives: 3,
-            maxLives: 3,
-            correctCount: 0,
-            wrongCount: 0,
-            history: [],
-            timerInterval: null,
-            timeRemaining: 15,
-            timeLimit: 15,
-            isLockedAnswer: false,
-            wrongModalTimer: null
-        };
-
-        // ---------------------------------------------------------
-        // 4. Web Audio 古風雅樂合成器
-        // ---------------------------------------------------------
-        function getAudioContext() {
-            if (!audioCtx) {
-                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                if (AudioContextClass) audioCtx = new AudioContextClass();
-            }
-            if (audioCtx && audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            return audioCtx;
-        }
-
-        function playSound(type) {
-            if (!soundEnabled) return;
-            try {
-                const ctx = getAudioContext();
-                if (!ctx) return;
-                const now = ctx.currentTime;
-
-                if (type === 'correct') {
-                    // 中國五聲音階宮商角徵羽上揚音 (C5, D5, E5, G5, A5)
-                    [523.25, 587.33, 659.25, 783.99, 880].forEach((freq, idx) => {
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(freq, now + idx * 0.065);
-                        gain.gain.setValueAtTime(0.18, now + idx * 0.065);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.065 + 0.35);
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
-                        osc.start(now + idx * 0.065);
-                        osc.stop(now + idx * 0.065 + 0.35);
-                    });
-                } else if (type === 'wrong') {
-                    // 低沉暮鼓警示音
-                    [196.00, 146.83].forEach((freq, idx) => {
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        osc.type = 'triangle';
-                        osc.frequency.setValueAtTime(freq, now + idx * 0.15);
-                        gain.gain.setValueAtTime(0.22, now + idx * 0.15);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.15 + 0.32);
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
-                        osc.start(now + idx * 0.15);
-                        osc.stop(now + idx * 0.15 + 0.32);
-                    });
-                } else if (type === 'click') {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(587.33, now);
-                    gain.gain.setValueAtTime(0.08, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.06);
-                } else if (type === 'finish') {
-                    [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(freq, now + idx * 0.11);
-                        gain.gain.setValueAtTime(0.2, now + idx * 0.11);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.11 + 0.5);
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
-                        osc.start(now + idx * 0.11);
-                        osc.stop(now + idx * 0.11 + 0.5);
-                    });
-                }
-            } catch (e) {
-                console.warn("Audio suppressed:", e);
-            }
-        }
-
-        window.toggleSound = function () {
-            soundEnabled = !soundEnabled;
-            const icon = document.getElementById('icon-sound');
-            const text = document.getElementById('text-sound');
-            if (soundEnabled) {
-                icon.className = "fa-solid fa-volume-high text-amber-300";
-                text.textContent = "音效開啟";
-                playSound('click');
-            } else {
-                icon.className = "fa-solid fa-volume-xmark text-sky-300/50";
-                text.textContent = "音效關閉";
-            }
-        };
-
-        // ---------------------------------------------------------
-        // 5. Toast 通知與自訂確認視窗
-        // ---------------------------------------------------------
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const el = document.createElement('div');
-            const colors = {
-                success: 'bg-jade-700 border-amber-300 text-paper-50',
-                error: 'bg-cinnabar-700 border-amber-300 text-paper-50',
-                info: 'bg-ink-900 border-bronze-400 text-amber-200'
-            };
-            const icons = {
-                success: 'fa-circle-check text-amber-300',
-                error: 'fa-circle-exclamation text-amber-300',
-                info: 'fa-scroll text-amber-400'
-            };
-            el.className = `px-4 py-3 rounded-xl border-2 shadow-xl flex items-center gap-2.5 text-xs sm:text-sm font-bold transition-all duration-300 ${colors[type] || colors.info}`;
-            el.innerHTML = `<i class="fa-solid ${icons[type] || icons.info} text-base"></i><span>${message}</span>`;
-            container.appendChild(el);
-            setTimeout(() => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(10px)';
-                setTimeout(() => el.remove(), 300);
-            }, 3200);
-        }
-
-        let confirmCallback = null;
-        function askConfirm(title, desc, onConfirm) {
-            document.getElementById('confirm-modal-title').textContent = title;
-            document.getElementById('confirm-modal-desc').textContent = desc;
-            confirmCallback = onConfirm;
-            const modal = document.getElementById('custom-confirm-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        window.closeConfirmModal = function (confirmed) {
-            const modal = document.getElementById('custom-confirm-modal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            if (confirmed && typeof confirmCallback === 'function') {
-                confirmCallback();
-            }
-            confirmCallback = null;
-        };
-
-        // ---------------------------------------------------------
-        // 6. Firebase 雲端連線與本機雙向同步機制
+        // 6. Firebase 雲端連線與本機雙向同步機制 (直接讀取程式碼內建設定)
         // ---------------------------------------------------------
         function updateStorageBadge(isCloud) {
             const dot = document.getElementById('storage-status-dot');
@@ -1467,20 +1219,20 @@
                 dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
                 text.textContent = "雲端與本機雙重同步中";
             } else {
-                dot.className = "w-2 h-2 rounded-full bg-amber-400";
-                text.textContent = "本機永久保存模式";
+                dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+                text.textContent = "資料庫永久保存中";
             }
         }
 
         async function initFirebaseSystem() {
             try {
-                // 優先檢查使用者是否在後台設定了自訂 Firebase Config
-                let rawConfig = localStorage.getItem(STORAGE_KEYS.CUSTOM_FB);
-                if (!rawConfig && typeof __firebase_config !== 'undefined' && __firebase_config) {
-                    rawConfig = __firebase_config;
-                }
+                // 直接使用環境注入的 __firebase_config 或程式碼上方內建的 HARDCODED_FIREBASE_CONFIG
+                const firebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config)
+                    ? JSON.parse(__firebase_config)
+                    : HARDCODED_FIREBASE_CONFIG;
 
-                if (!rawConfig) {
+                // 若為預設範例金鑰且無環境注入設定，則直接啟用內建本機永久資料庫模式
+                if (!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey.includes("YourBuiltInFirebaseApiKeyHere")) {
                     updateStorageBadge(false);
                     saveIdiomsToLocal(idiomsList);
                     saveSettingsToLocal(gameSettings);
@@ -1488,12 +1240,11 @@
                     return;
                 }
 
-                const firebaseConfig = JSON.parse(rawConfig);
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
 
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token && !localStorage.getItem(STORAGE_KEYS.CUSTOM_FB)) {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
@@ -1508,7 +1259,7 @@
                     }
                 });
             } catch (err) {
-                console.warn("目前使用本機永久儲存模式:", err);
+                console.warn("目前使用內建永久儲存模式:", err);
                 updateStorageBadge(false);
                 saveIdiomsToLocal(idiomsList);
                 saveSettingsToLocal(gameSettings);
@@ -1805,11 +1556,6 @@
 
             const settingMaxLives = document.getElementById('setting-max-lives');
             if (settingMaxLives) settingMaxLives.value = gameSettings.maxLives;
-
-            const inlineFbInput = document.getElementById('inline-firebase-config-input');
-            if (inlineFbInput && !inlineFbInput.value) {
-                inlineFbInput.value = localStorage.getItem(STORAGE_KEYS.CUSTOM_FB) || '';
-            }
 
             // 5. 更新所有課次篩選下拉選單
             const filterDropdownIds = [
